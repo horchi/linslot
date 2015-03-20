@@ -57,15 +57,13 @@ win32:DEFINES     += _CRT_SECURE_NO_DEPRECATE
 
 message("Building for $$interface ...")
 
-contains(interface, iowarrior) 
-{
+contains(interface, iowarrior) {
    HEADERS        += iow.hpp
    SOURCES        += iow.cc
    QMAKE_CXXFLAGS += -DWITH_IOWARRIOR
 }
 
-contains(interface, arduino) 
-{
+contains(interface, arduino) {
    HEADERS        += arduino.hpp
    SOURCES        += arduino.cc
    QMAKE_CXXFLAGS += -DWITH_ARDUINO

@@ -1,0 +1,6 @@
+moc_*
+*.o
+*.a
+linslot
+Makefile
+ui_*
