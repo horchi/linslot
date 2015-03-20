@@ -1,0 +1,32 @@
+
+
+Benötigte I/O Leitungen
+#######################
+
+
+Allgemein
+---------
+
+1 D-In  (Bedientaster)
+
+
+Je Spur
+-------
+
+1 D-In  (Lichtschranke)
+1 D-Out (Stromabschaltung)
+1 D-In  (Bedientaster)
+
+
+1 Ghostcar
+----------
+
+1 A-In
+1 A-Out
+
+Startampel
+----------
+
+6 D-Out (LEDs)
+
+

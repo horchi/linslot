@@ -1,0 +1,118 @@
+
+###################
+  Voraussetzungen
+###################
+
+- Arduino - Diecimila oder IO/Warrior 24 
+- qt4, qt4-dev (bei gängigen Distributionen als Paket verfügbar)
+- libsqlite3, libsqlite3-dev (bei gängigen Distributionen als Paket verfügbar)
+
+Arduino
+-------
+
+- avr-libc, avrdude, gcc-avr, binutils-avr (bei gängigen Distributionen als Paket verfügbar)
+- die Entwicklungsumgebung von hier http://www.arduino.cc/en/Main/Software
+  davon wird nicht unbedingt die IDE sondern die Zusatz-Libraries benötigt
+
+IO/Warrior
+----------
+
+- Das Kernelmodul fuer den IO/Warrior (http://www.codemercs.com)
+
+###############
+     Build
+###############
+
+auspacken
+> tar xvjf linslot-x.x.x.tar.bz2
+> cd linslot
+
+In der Datei linslot.pro die Hardware wählen (Arduino/IO-Warrior), einfach die 
+andere HW auskommentieren. Beispiel:
+
+  #interface = iowarrior
+  interface = arduino
+
+> qmake 
+  je nach QT-Installation qmake-qt4 (wichtig ist das qmake von qt4.x verwendet wird)
+> make
+
+Arduino Build/Upload
+--------------------
+
+Der Build Prozess ist nur nötig wenn man am Code des ATmega Programmteils etwas verändert hat,
+ansonsten kann man glich zum nächten Schritt (upload) übergehen da das HEX File 
+im Tarball enthalten ist.
+
+> cd linslot/avr
+> make clean
+> make -s
+
+Arduino an USB anschließen, den USB Port im Makefile einstellen (Zeile: PORT = /dev/ttyUSB0)
+Nun noch der Upload
+
+> make upload
+
+Hinweius:
+Sollte der upload nicht starten hilft bei mir das gleichzeitige 'kurze' betätigen
+der Reset-Taste auf dem Arduino (gleichzeitig mit dem starten von 'make upload')
+
+
+################
+  Installation
+################
+
+System:
+-------
+Das Kernel Modul solle nach der Installation automatisch geladen werden. 
+
+Arduino:    Modul 'ftdi_sio'
+IO/Warrior: Modul 'iowarrior'
+
+
+IO/Warrior
+----------
+Um den Warrior nun immer unter dem gleichen Device File ansprechen zu können 
+ist es hilfreich eine entsprechende udev-Regel anzulegen. Ein Beispiel wie es unter
+den meisten aktuellen Distributionen funktionieren sollte liegt im Ordner udev. 
+Einfach die Datei nach /etc/udev/rules.d/ kopieren:
+cp ./udev/10-iowarrior.rules  /etc/udev/rules.d/
+
+
+Programm
+--------
+
+> cd linslot
+> su root
+> mkdir -p /usr/local/share/linslot/
+> cp -a pixmap sound /usr/local/share/linslot/
+> chmod -R a+rX /usr/local/share/linslot/ 
+> cp linslot /usr/local/bin
+> chmod 755 /usr/local/bin/linslot
+
+
+###############
+    Start
+###############
+
+> linslot
+
+oder ohne Anschluss externer Hardware (IO/Warrior, ...) im Testbetrieb
+
+> linslot -t
+
+dann gibt es ca. alle zwei Sekunden ein generisches Durchfahrtsignal.
+
+
+Bezugsquellen 
+-------------
+
+IO/Warrior Bausteins (unter anderem) http://www.emedia.de
+
+
+###############
+    TODOS
+###############
+
+- Installationsskript
+- Programm auf 4-Spuren erweitern
