@@ -19,6 +19,8 @@
 #include <common.hpp>
 #include <iointerface.hpp>
 
+class LinslotWindow;
+
 //***************************************************************************
 // I/O Thread
 //***************************************************************************
@@ -26,12 +28,12 @@
 class IoThread : public QThread, public SlotService, public IoService
 {
       Q_OBJECT
-      
+
    public:
 
       // object
-      
-      IoThread();
+
+      IoThread(LinslotWindow* aLinslot);
       virtual ~IoThread();
 
       // interface
@@ -57,7 +59,7 @@ class IoThread : public QThread, public SlotService, public IoService
       void startGhostCar(char pwmBit, char iBit, int profileId);
       void stopGhostCar();
       void ghostCarSync();
-      void initIoSetup(word bitsInput, word bitsOutput, byte withSpi) 
+      void initIoSetup(word bitsInput, word bitsOutput, byte withSpi)
       { ioDevice->initIoSetup(bitsInput, bitsOutput, withSpi); }
 
       // get / set
@@ -75,7 +77,7 @@ class IoThread : public QThread, public SlotService, public IoService
       void onReplayTimer();
 
    protected:
-      
+
       struct GcValue
       {
          byte volt;
@@ -87,6 +89,7 @@ class IoThread : public QThread, public SlotService, public IoService
 
       // data
 
+      LinslotWindow* linslot;
       int gcPause;
       QTimer* gcReplayTimer;
       int gcValueIndex;

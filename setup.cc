@@ -30,7 +30,7 @@
 //***************************************************************************
 
 SetupDialog::SetupDialog(QString configPath)
-{ 
+{
    int count;
    char tmpDevice[100+TB];
 
@@ -43,7 +43,7 @@ SetupDialog::SetupDialog(QString configPath)
    QCoreApplication::setApplicationName("linslot") ;
 
    settings = new QSettings(configPath + "/linslotrc", QSettings::IniFormat);
- 
+
    settings->beginGroup("common");
 
    lapCountRace = settings->value("lapCount", 10).toInt();
@@ -53,7 +53,7 @@ SetupDialog::SetupDialog(QString configPath)
    maxTimeTraining = settings->value("maxTimeTraining", 0).toInt();
    speedFactor = settings->value("speedFactor", 1).toInt();
    abortAtJumpTheGun = settings->value("abortAtJumpTheGun", 0).toInt();
-   strncpy(tmpDevice, settings->value("usbDevice", "/dev/usb/iowarrior").toString().toAscii(), 100);
+   strncpy(tmpDevice, settings->value("usbDevice", "/dev/ttyUSB0").toString().toAscii(), 100);
    tmpDevice[100] = 0;
    strcpy(alsaDevice, settings->value("alsaDevice", "default").toString().toAscii());
    strcpy(courseName, settings->value("course", "Heimstrecke").toString().toAscii());
@@ -79,7 +79,7 @@ SetupDialog::SetupDialog(QString configPath)
    settings->beginGroup("driver");
    count = settings->beginReadArray("driver");
 
-   for (int i = 0; i < count; ++i) 
+   for (int i = 0; i < count; ++i)
    {
       settings->setArrayIndex(i);
       listWidgetDriver->addItem(settings->value("name").toString());
@@ -96,7 +96,7 @@ SetupDialog::SetupDialog(QString configPath)
    settings->beginGroup("cars");
    count = settings->beginReadArray("car");
 
-   for (int i = 0; i < count; ++i) 
+   for (int i = 0; i < count; ++i)
    {
       settings->setArrayIndex(i);
       listWidgetCar->addItem(settings->value("name").toString());
@@ -122,7 +122,7 @@ SetupDialog::SetupDialog(QString configPath)
       count = bitInputCount;
    }
 
-   for (int i = 0; i < count; ++i) 
+   for (int i = 0; i < count; ++i)
    {
       settings->setArrayIndex(i);
 
@@ -145,7 +145,7 @@ SetupDialog::SetupDialog(QString configPath)
       count = fctOutputCount;
    }
 
-   for (int i = 0; i < count; ++i) 
+   for (int i = 0; i < count; ++i)
    {
       settings->setArrayIndex(i);
 
@@ -169,7 +169,7 @@ SetupDialog::SetupDialog(QString configPath)
       count = sfCount;
    }
 
-   for (int i = 0; i < count; ++i) 
+   for (int i = 0; i < count; ++i)
    {
       settings->setArrayIndex(i);
       sounds[i].sound = settings->value("sound", sounds[i].sound).toString();
@@ -217,12 +217,10 @@ SetupDialog::SetupDialog(QString configPath)
    comboBoxDevice->addItem("/dev/ttyUSB1");
    comboBoxDevice->addItem("/dev/ttyUSB2");
    comboBoxDevice->addItem("/dev/ttyUSB3");
-   comboBoxDevice->addItem("/dev/usb/iowarrior");
 #else
    comboBoxDevice->addItem("COM1");
    comboBoxDevice->addItem("COM2");
    comboBoxDevice->addItem("COM3");
-   comboBoxDevice->addItem("COM4");
 #endif
 
    comboBoxDevice->setCurrentIndex(comboBoxDevice->findText(tmpDevice));
@@ -259,7 +257,7 @@ SetupDialog::SetupDialog(QString configPath)
       radioButtonCarImage->setChecked(true);
    else
       radioButtonAnimateImage->setChecked(true);
-      
+
    switch (speedFactor)
    {
       case 1:  radioButtonFaktor1->setChecked(true);   break;
@@ -275,7 +273,7 @@ SetupDialog::SetupDialog(QString configPath)
    tableWidgetInputSignals->setRowCount(bitInputCount);
    tableWidgetInputSignals->setColumnCount(3);
 
-   for (int i = 0; i < bitInputCount; ++i) 
+   for (int i = 0; i < bitInputCount; ++i)
    {
       QTableWidgetItem* itemFunction = new QTableWidgetItem(inputFunctionName(i));
       itemFunction->setFlags(itemFunction->flags() & ~Qt::ItemIsEditable);
@@ -302,7 +300,7 @@ SetupDialog::SetupDialog(QString configPath)
    ComboBoxDelegate* bitDelegate = new ComboBoxDelegate(this);
    bitDelegate->addItem("NA");
 
-   for (int i = 0; i < 32; i++) 
+   for (int i = 0; i < 32; i++)
       bitDelegate->addItem(QString::number(i));
 
    tableWidgetInputSignals->setItemDelegateForColumn(1, bitDelegate);
@@ -314,7 +312,7 @@ SetupDialog::SetupDialog(QString configPath)
    modeDelegate->addItem("falling");
    tableWidgetInputSignals->setItemDelegateForColumn(2, modeDelegate);
 
-   connect(tableWidgetInputSignals, SIGNAL(cellChanged(int, int)), 
+   connect(tableWidgetInputSignals, SIGNAL(cellChanged(int, int)),
            this, SLOT(inputSignalChanged(int, int)));
 
    // -----------------------
@@ -323,7 +321,7 @@ SetupDialog::SetupDialog(QString configPath)
    tableWidgetOutputSignals->setRowCount(fctOutputCount);
    tableWidgetOutputSignals->setColumnCount(4);
 
-   for (int i = 0; i < fctOutputCount; ++i) 
+   for (int i = 0; i < fctOutputCount; ++i)
    {
       QTableWidgetItem* itemFunction = new QTableWidgetItem(outputFunctionName(i));
       itemFunction->setFlags(itemFunction->flags() & ~Qt::ItemIsEditable);
@@ -372,14 +370,14 @@ SetupDialog::SetupDialog(QString configPath)
    ComboBoxDelegate* obitDelegate = new ComboBoxDelegate(this);
    obitDelegate->addItem("NA");
 
-   for (int i = 0; i < 32; i++) 
+   for (int i = 0; i < 32; i++)
       obitDelegate->addItem(QString::number(i));
 
    tableWidgetOutputSignals->setItemDelegateForColumn(2, obitDelegate);
 
    // connect
 
-   connect(tableWidgetOutputSignals, SIGNAL(cellChanged(int, int)), 
+   connect(tableWidgetOutputSignals, SIGNAL(cellChanged(int, int)),
            this, SLOT(outputSignalChanged(int, int)));
 
    // -----------------------------
@@ -388,7 +386,7 @@ SetupDialog::SetupDialog(QString configPath)
    tableWidgetSound->setRowCount(sfCount);
    tableWidgetSound->setColumnCount(2);
 
-   for (int i = 0; i < sfCount; ++i) 
+   for (int i = 0; i < sfCount; ++i)
    {
       QTableWidgetItem* itemFunction = new QTableWidgetItem(sounds[i].name);
       itemFunction->setFlags(itemFunction->flags() & ~Qt::ItemIsEditable);
@@ -414,12 +412,12 @@ SetupDialog::SetupDialog(QString configPath)
    QDir dir(QString(resourcePath) + "/sound", "*.wav", QDir::Name, QDir::Files);
    QFileInfoList list = dir.entryInfoList();
 
-   for (int i = 0; i < list.size(); ++i) 
+   for (int i = 0; i < list.size(); ++i)
       soundDelegate->addItem(list.at(i).fileName());
 
    tableWidgetSound->setItemDelegateForColumn(1, soundDelegate);
 
-   connect(tableWidgetSound, SIGNAL(cellChanged(int, int)), 
+   connect(tableWidgetSound, SIGNAL(cellChanged(int, int)),
            this, SLOT(soundSignalChanged(int, int)));
 
    // -----------------------------
@@ -428,7 +426,7 @@ SetupDialog::SetupDialog(QString configPath)
    tableWidgetAnalogInputs->setRowCount(fctAnalogCount);
    tableWidgetAnalogInputs->setColumnCount(2);
 
-   for (int i = 0; i < fctAnalogCount; ++i) 
+   for (int i = 0; i < fctAnalogCount; ++i)
    {
       QTableWidgetItem* itemFunction = new QTableWidgetItem(analogInFunctionName(i));
       itemFunction->setFlags(itemFunction->flags() & ~Qt::ItemIsEditable);
@@ -448,7 +446,7 @@ SetupDialog::SetupDialog(QString configPath)
 
    ComboBoxDelegate* abitDelegate = new ComboBoxDelegate(this);
    abitDelegate->addItem("NA");
-   for (int i = 0; i < 6; i++) 
+   for (int i = 0; i < 6; i++)
       abitDelegate->addItem(QString::number(i));
    tableWidgetAnalogInputs->setItemDelegateForColumn(1, abitDelegate);
 
@@ -495,7 +493,7 @@ SetupDialog::~SetupDialog()
    settings->beginGroup("driver");
    settings->beginWriteArray("driver");
 
-   for (int i = 0; i < listWidgetDriver->count(); ++i) 
+   for (int i = 0; i < listWidgetDriver->count(); ++i)
    {
       QString name = listWidgetDriver->item(i)->text();
       settings->setArrayIndex(i);
@@ -513,7 +511,7 @@ SetupDialog::~SetupDialog()
    settings->beginGroup("cars");
    settings->beginWriteArray("car");
 
-   for (int i = 0; i < listWidgetCar->count(); ++i) 
+   for (int i = 0; i < listWidgetCar->count(); ++i)
    {
       QString name = listWidgetCar->item(i)->text();
       settings->setArrayIndex(i);
@@ -531,7 +529,7 @@ SetupDialog::~SetupDialog()
    settings->beginGroup("inputSignals");
    settings->beginWriteArray("inputSignals");
 
-   for (int i = 0; i < bitInputCount; ++i) 
+   for (int i = 0; i < bitInputCount; ++i)
    {
       settings->setArrayIndex(i);
 
@@ -547,7 +545,7 @@ SetupDialog::~SetupDialog()
    settings->beginGroup("outputSignals");
    settings->beginWriteArray("outputSignals");
 
-   for (int i = 0; i < fctOutputCount; ++i) 
+   for (int i = 0; i < fctOutputCount; ++i)
    {
       settings->setArrayIndex(i);
 
@@ -564,7 +562,7 @@ SetupDialog::~SetupDialog()
    settings->beginGroup("soundSignals");
    settings->beginWriteArray("soundSignals");
 
-   for (int i = 0; i < sfCount; ++i) 
+   for (int i = 0; i < sfCount; ++i)
    {
       settings->setArrayIndex(i);
 
@@ -579,7 +577,7 @@ SetupDialog::~SetupDialog()
    settings->beginGroup("analogInputs");
    settings->beginWriteArray("analogInputs");
 
-   for (int i = 0; i < fctAnalogCount; ++i) 
+   for (int i = 0; i < fctAnalogCount; ++i)
    {
       settings->setArrayIndex(i);
 
@@ -667,7 +665,7 @@ void SetupDialog::on_pushButtonAddImage_clicked()
 
    if (row >= 0)
    {
-      QString fileName = QFileDialog::getOpenFileName(this, "Bild zuordnen", 
+      QString fileName = QFileDialog::getOpenFileName(this, "Bild zuordnen",
                                               "", "Image Files (*.png *.jpg *.bmp)");
 
       if (!fileName.size() || !QFile::exists(fileName))
@@ -677,7 +675,7 @@ void SetupDialog::on_pushButtonAddImage_clicked()
       labelDriverImage->setPixmap(pixmap.scaled(labelDriverImage->width(),
                                                 labelDriverImage->height(),
                                                 Qt::KeepAspectRatio));
-     
+
       driverImages[listWidgetDriver->item(row)->text()] = fileName;
    }
 }
@@ -706,7 +704,7 @@ void SetupDialog::on_pushButtonAddCarImage_clicked()
 
    if (row >= 0)
    {
-      QString fileName = QFileDialog::getOpenFileName(this, "Bild zuordnen", 
+      QString fileName = QFileDialog::getOpenFileName(this, "Bild zuordnen",
                                               "", "Image Files (*.png *.jpg *.bmp)");
 
       if (!fileName.size() || !QFile::exists(fileName))
@@ -716,13 +714,13 @@ void SetupDialog::on_pushButtonAddCarImage_clicked()
       labelCarImage->setPixmap(pixmap.scaled(labelCarImage->width(),
                                                 labelCarImage->height(),
                                                 Qt::KeepAspectRatio));
-     
+
       carImages[listWidgetCar->item(row)->text()] = fileName;
    }
 }
 
 //***************************************************************************
-// 
+//
 //***************************************************************************
 
 void SetupDialog::on_listWidgetDriver_currentItemChanged(QListWidgetItem* current, QListWidgetItem* )
@@ -739,7 +737,7 @@ void SetupDialog::on_listWidgetDriver_currentItemChanged(QListWidgetItem* curren
 }
 
 //***************************************************************************
-// 
+//
 //***************************************************************************
 
 void SetupDialog::on_listWidgetCar_currentItemChanged(QListWidgetItem* current, QListWidgetItem* )
@@ -843,7 +841,7 @@ void SetupDialog::on_comboBoxAlsaDevice_currentIndexChanged(const QString text)
 
       if (d->name.indexOf("default:") == -1)
          continue;
-      
+
       tell(eloDebug2, "using sound device '%s'",
            d->name.toAscii().constData());
 
@@ -887,9 +885,9 @@ void SetupDialog::on_lineEditResourcePath_editingFinished()
 
 void SetupDialog::on_timeEditLapRace_editingFinished()
 {
-   maxTimeLapRace = 
-      timeEditLapRace->time().hour()*3600 
-      + timeEditLapRace->time().minute()*60 
+   maxTimeLapRace =
+      timeEditLapRace->time().hour()*3600
+      + timeEditLapRace->time().minute()*60
       + timeEditLapRace->time().second();
 }
 
@@ -899,9 +897,9 @@ void SetupDialog::on_timeEditLapRace_editingFinished()
 
 void SetupDialog::on_timeEditTraining_editingFinished()
 {
-   maxTimeTraining = 
-      timeEditTraining->time().hour()*3600 
-      + timeEditTraining->time().minute()*60 
+   maxTimeTraining =
+      timeEditTraining->time().hour()*3600
+      + timeEditTraining->time().minute()*60
       + timeEditTraining->time().second();
 }
 
@@ -949,7 +947,7 @@ void SetupDialog::on_radioButtonJumpTheGunAbort_toggled(bool checked)
 }
 
 //***************************************************************************
-// 
+//
 //***************************************************************************
 
 void SetupDialog::on_radioButtonJumpTheGunPenalty_toggled(bool checked)
@@ -1082,14 +1080,14 @@ void SetupDialog::analogInputChanged(int row, int col)
 }
 
 //***************************************************************************
-// 
+//
 //***************************************************************************
 
 word SetupDialog::getInputMask()
 {
    word mask = 0;
 
-   for (int i = 0; i < bitInputCount; ++i) 
+   for (int i = 0; i < bitInputCount; ++i)
    {
       if (inputBits[i].bit < 16)
          mask |= 1 << inputBits[i].bit;
@@ -1102,7 +1100,7 @@ word SetupDialog::getOutputMask()
 {
    word mask = 0;
 
-   for (int i = 0; i < fctOutputCount; ++i) 
+   for (int i = 0; i < fctOutputCount; ++i)
    {
       if (outputBits[i].bit < 16)
          mask |= 1 << outputBits[i].bit;

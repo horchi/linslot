@@ -1,4 +1,4 @@
-#//***************************************************************************
+//***************************************************************************
 // Group Linslot / Linux - Slotrace Manager
 // File  main.cpp
 // Date 26.01.08 - Jörg Wendel
@@ -53,7 +53,7 @@ enum Misc
 // Settings
 //***************************************************************************
 
-#define GHOSTCAR                    // comment out if no GHOST-CAR used 
+#define GHOSTCAR                    // comment out if no GHOST-CAR used
 
 //***************************************************************************
 // Declarations
@@ -103,12 +103,12 @@ struct GcValue
 
 //***************************************************************************
 // Send Command
-//   we have to send the data as binary, ascii is to big and 
+//   we have to send the data as binary, ascii is to big and
 //   so to slow for oure purpose
 //***************************************************************************
 
 void sendCommand(byte command, const byte* buf = 0, byte size = 0)
-{  
+{
    //serialWrite(Ios::protocol | (command & Ios::commandMask));
    serialWrite(command);
    serialWrite(size);
@@ -209,8 +209,8 @@ class FifoCache
       }
 
       IoValue pop()
-      { 
-         IoValue v; 
+      {
+         IoValue v;
 
          if (!first)
          {
@@ -233,7 +233,7 @@ class FifoCache
          free(tmp);
          cnt--;
 
-         return v; 
+         return v;
       }
 
    private:
@@ -295,11 +295,10 @@ void setup()
 
    timerLoadValue = setupTimer2();     // set interrupt to 1kHz
 
-   // init some variables 
+   // init some variables
 
    outputValue = 0;
 }
-
 
 //***************************************************************************
 // Setup SPI Bus
@@ -317,22 +316,22 @@ void setupSpiBus()
    pinMode(bitShiftRegSlave, OUTPUT);
    digitalWrite(bitShiftRegSlave, HIGH);  // disable device
 
-   // Now we set the SPI Control register (SPCR) to the binary value 01010000. 
-   // In the control register each bit sets a different functionality. The eighth 
-   // bit disables the SPI interrupt, the seventh bit enables the SPI, the sixth 
+   // Now we set the SPI Control register (SPCR) to the binary value 01010000.
+   // In the control register each bit sets a different functionality. The eighth
+   // bit disables the SPI interrupt, the seventh bit enables the SPI, the sixth
    // bit chooses transmission with the most significant bit going first, the fifth
-   // bit puts the Arduino in Master mode, the fourth bit sets the data clock idle 
+   // bit puts the Arduino in Master mode, the fourth bit sets the data clock idle
    // when it is low, the third bit sets the SPI to sample data on the rising edge
-   // of the data clock, and the second and first bits set the speed of the SPI to 
-   // system speed / 4 (the fastest). After setting our control register up we read 
-   // the SPI status register (SPSR) and data register (SPDR) in to the junk clr 
+   // of the data clock, and the second and first bits set the speed of the SPI to
+   // system speed / 4 (the fastest). After setting our control register up we read
+   // the SPI status register (SPSR) and data register (SPDR) in to the junk clr
    // variable to clear out any spurious data from past runs:
 
    SPCR = (1 << SPE) | (1 << MSTR);
 
-   // SPI als Master, High-Bits zuerst, SCK ist HIGH wenn inaktiv 
+   // SPI als Master, High-Bits zuerst, SCK ist HIGH wenn inaktiv
    // SPCR = (1 << SPE) | (1 << MSTR) | (1 << CPOL);
-   // maximale Geschwindigkeit: F_CPU / 2 
+   // maximale Geschwindigkeit: F_CPU / 2
    // SPSR |= (1 << SPI2X);
 
    clr = SPSR;
@@ -374,7 +373,7 @@ unsigned char setupTimer2()
 // Timer2 overflow interrupt vector handler (called every 1ms)
 //***************************************************************************
 
-ISR(TIMER2_OVF_vect) 
+ISR(TIMER2_OVF_vect)
 {
    callMeanwhile = true;
 
@@ -391,26 +390,28 @@ ISR(TIMER2_OVF_vect)
 //***************************************************************************
 // Meanwhile
 //
-//  meanwhile() have to be called in *each* programm loop to make shure the 
+//  meanwhile() have to be called in *each* programm loop to make sure the
 //    call cycle will be maintained !
 //
-//  meanwhile() is controlled by the 'callMeanwhile' flag set by the 
-//    ISR (interrupt service routine), due to this it should be run every 1ms. 
+//  meanwhile() is controlled by the 'callMeanwhile' flag set by the
+//    ISR (interrupt service routine), due to this it should be run every 1ms.
 //    The better way (for safer cycles) would be to put this stuff directly
-//    into the ISR or call meanwhile from there. 
+//    into the ISR or call meanwhile from there.
 //    But it's not possible since serial data goes lost during the ISR :(
 //***************************************************************************
 
 void meanwhile()
 {
-   static unsigned long lastInputTimes[32];            // time for each bit used to avoid bouncing
+   static unsigned long lastInputTimes[32];     // time for each bit used to avoid bouncing
 
    if (!callMeanwhile)
       return ;
 
    callMeanwhile = false;
 
-   // digitalWrite(7, HIGH);                    // to messure the length
+   // to messure the lenght of this routinbe at pin 7
+   //  (e.g. with a oszilloskop)
+   // digitalWrite(7, HIGH);
 
    lastMsec = millis();
 
@@ -425,15 +426,15 @@ void meanwhile()
       {
          byte volt;
          byte ampere = 0;
-      
+
          volt = (analogRead(ghostcarPinU) * 255L) / 1024L;
-      
+
          if (ghostcarPinI != na)
             ampere = analogRead(ghostcarPinI);
-      
+
          if (!inputCache.full())
             inputCache.push(volt, ampere, Ios::cAnalogIn);
-      
+
          gcScale = gcScaleLoad;
       }
    }
@@ -446,14 +447,14 @@ void meanwhile()
       if (!gcScale-- && gcBufferTail != gcBufferHead)
       {
          // write value only if not at end of list
-         // last value will hold until sync signal 
+         // last value will hold until sync signal
          // detected by PC
 
          byte gcSollVolt = 0;
 
          gcSollAmp = gcOutValues[gcBufferTail].ampere;
          gcSollVolt = gcOutValues[gcBufferTail].volt;
-         
+
          if (gcSollVolt)
             analogWrite(gcPwmOut, gcSollVolt);
          else
@@ -468,7 +469,7 @@ void meanwhile()
       }
 
       else if (gcControlScaleLoad != na && !gcControlScale--)
-      {       
+      {
          int amp = analogRead(ghostcarPinI);
          // int diff = (int)gcSollAmp - amp;
          long pIst = gcLastVolt * amp;
@@ -487,8 +488,8 @@ void meanwhile()
          else if (v > 254)
             v = 254;
 
-//          if (v < gcSollVolt-40 || v > gcSollVolt+40)
-//             debug("v", diff);
+//      if (v < gcSollVolt-40 || v > gcSollVolt+40)
+//         debug("v", diff);
 
          if (v)
             setBit(28-firstExtendedOut, outputValue);
@@ -514,7 +515,7 @@ void meanwhile()
    unsigned long value = lastInputValue;
    byte changes = 0;
    byte bit;
-   
+
    // --------------------------------
    // Support Internal IO (byte 0+1)
    //   - start with 2, bit 0+1 used by RS-232 !
@@ -529,7 +530,7 @@ void meanwhile()
    {
       // --------------------------------
       // Support External IO (byte 2+3)
-  
+
       digitalWrite(bitShiftRegSlave, LOW);          // enable device
 
       // shift all bits in/out
@@ -542,7 +543,7 @@ void meanwhile()
             SPDR = (outputValue >> 8);               // heigh byte
          else
             SPDR = outputValue & 0x00FF;             // low byte
-         
+
          while (!(SPSR & (1 << SPIF)))               // wait the end of the transmission
             ;
 
@@ -587,7 +588,7 @@ void meanwhile()
       inputCache.push(lastInputValue, lastMsec, Ios::cDigitalIn);
    }
 
-   // digitalWrite(7, LOW);    // to messure the lenght
+   // digitalWrite(7, LOW);             // to messure the length
 }
 
 //**************************************************************
@@ -607,7 +608,7 @@ void sendPengingIo()
       if (v.command == Ios::cDigitalIn)
       {
          Ios::DigitalInput data;
-         
+
          data.value = v.value1;
          data.time = v.value2;
 
@@ -632,10 +633,10 @@ void sendPengingIo()
 void cmdGettime()
 {
    Ios::DigitalInput data;
-         
+
    data.value = 0;
    data.time = millis();
-   
+
    sendCommand(Ios::cBoardTime, (byte*)&data, sizeof(Ios::DigitalInput));
 }
 
@@ -646,10 +647,10 @@ void cmdGettime()
 void cmdGetInputs()
 {
    Ios::DigitalInput data;
-         
+
    data.value = lastInputValue;
    data.time = lastMsec;
-   
+
    sendCommand(Ios::cDigitalIn, (byte*)&data, sizeof(Ios::DigitalInput));
 }
 
@@ -668,7 +669,7 @@ void cmdDigitalOutBit(const byte* buffer)
       if (digOut.bit >= firstExtendedOut)
       {
          digOut.bit -= firstExtendedOut;
-         
+
          if (digOut.state)
             setBit(digOut.bit, outputValue);
          else
@@ -736,7 +737,7 @@ void cmdStartGhostCar(const byte* buffer)
    gcScaleLoad = sgc.cycle;
    gcPwmOut = sgc.bit;
    ghostcarPinI = sgc.ampereBit;
-   gcControlScaleLoad = sgc.controlCycle; 
+   gcControlScaleLoad = sgc.controlCycle;
    incFactor = sgc.incFactor;
    decFactor = sgc.decFactor;
 
@@ -754,14 +755,14 @@ void cmdStopGhostCar()
 }
 
 //**************************************************************
-// Command 
+// Command
 //**************************************************************
 
 void cmdGhostCarValue(const byte* buffer)
 {
 	int i = (gcBufferHead + 1) % sizeGcBuffer;
 
-	if (i != gcBufferTail) 
+	if (i != gcBufferTail)
    {
       gcOutValues[gcBufferHead].volt   = ((Ios::GhostCarValue*)buffer)->volt;
       gcOutValues[gcBufferHead].ampere = ((Ios::GhostCarValue*)buffer)->ampere;
@@ -775,7 +776,7 @@ void cmdGhostCarValue(const byte* buffer)
 }
 
 //***************************************************************************
-// 
+//
 //***************************************************************************
 
 void cmdGhostCarFlush()
@@ -791,7 +792,7 @@ void cmdSetupIo(const byte* buffer)
 {
    bitsInput = ((Ios::SetupIo*)buffer)->bitsInput;
    bitsOutput = ((Ios::SetupIo*)buffer)->bitsOutput;
-   
+
    // bit 0,1 reserved for RS-232
 
    for (char bit = 2; bit < 14; bit++)
@@ -900,14 +901,14 @@ void loop()
 
 int main()
 {
-	init();
-	setup();
+   init();
+   setup();
 
-	for (;;)
+   for (;;)
    {
       meanwhile();
-		loop();
+      loop();
    }
 
-	return 0;
+   return 0;
 }

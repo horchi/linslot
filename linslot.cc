@@ -96,9 +96,9 @@ LinslotWindow::LinslotWindow()
    timerAnimateImage = new QTimer(this);
    connect(timerAnimateImage, SIGNAL(timeout()), this, SLOT(onAnimateTimer()));
 
-   // thread stuff 
+   // thread stuff
 
-   thread = new IoThread();
+   thread = new IoThread(this);
 
    // connect thread
 
@@ -111,7 +111,12 @@ LinslotWindow::LinslotWindow()
    connect(thread, SIGNAL(onAnalogInput(const AnalogEvent)),
            this, SLOT(onAnalogInput(const AnalogEvent)));
 
-   initInterface();
+   // start io thread
+
+   thread->init();
+   thread->setDevice(setupDialog->getUsbDevice());
+   thread->start();
+   thread->setTestMode(testMode);
 
    // apply setup options
 
@@ -137,7 +142,7 @@ LinslotWindow::~LinslotWindow()
 }
 
 //***************************************************************************
-// init/exit
+// Init
 //***************************************************************************
 
 void LinslotWindow::init()
@@ -208,7 +213,7 @@ void LinslotWindow::init()
    // init slot data
 
    for (int i = 0; i < slotCount; i++)
-   {      
+   {
       theSlots[i].lap = -1;
       theSlots[i].penalty = 0;
       *theSlots[i].driver = 0;
@@ -234,7 +239,7 @@ void LinslotWindow::init()
       theSlots[i].tableWidget->setEditTriggers(QAbstractItemView::NoEditTriggers);
 
       theSlots[i].fuelTimer = new QTimer(this);
-      connect(theSlots[i].fuelTimer, SIGNAL(timeout()), this, 
+      connect(theSlots[i].fuelTimer, SIGNAL(timeout()), this,
               i == 0 ? SLOT(onFuelTimerSlot1()) : SLOT(onFuelTimerSlot2()));
    }
 
@@ -258,11 +263,15 @@ void LinslotWindow::init()
 
    tell(eloDebug, "open db done");
 
-   // at last, check sound
+   // check sound
 
    if (trySound)
       checkSound();
 }
+
+//***************************************************************************
+// Exit
+//***************************************************************************
 
 void LinslotWindow::exit()
 {
@@ -279,29 +288,29 @@ void LinslotWindow::exit()
 
    if (!thread->wait(2000))
       tell(eloAlways, "Thread would not end!");
-   else 
+   else
       tell(eloAlways, "Thread ended regularly");
 }
 
 //***************************************************************************
-// 
+//
 //***************************************************************************
-
+/*
 int LinslotWindow::initInterface()
 {
    int cnt = 0;
 
-   // start io thread 
+   // start io thread
 
    thread->init();
    thread->setDevice(setupDialog->getUsbDevice());
    thread->start();
    thread->setTestMode(testMode);
 
-   tell(eloDebug, "Debug: Waiting for io device");
-   
+   tell(eloAlways, "Debug: Waiting for io device");
+
    // TODO, besser via signal anstoßen statt hier warten !
-   
+
    while (!thread->isOpen())
    {
       sleep(1);
@@ -310,19 +319,28 @@ int LinslotWindow::initInterface()
       if (testMode && cnt > 2)
          break;
    }
-   
-   if (thread->isOpen())
-   {
-      // init 
-      
-      thread->initIoSetup(setupDialog->getInputMask(), 
-                          setupDialog->getOutputMask(), 
-                          setupDialog->getWithSpiExtension());
-      
-      usleep(100000);
-      thread->activate();
-   }
-   
+
+   return success;
+} */
+
+//***************************************************************************
+// IO Opened
+//***************************************************************************
+
+void LinslotWindow::ioOpened()
+{
+   if (!thread->isOpen())
+      return;
+
+   // init
+
+   thread->initIoSetup(setupDialog->getInputMask(),
+                       setupDialog->getOutputMask(),
+                       setupDialog->getWithSpiExtension());
+
+   usleep(100000);
+   thread->activate();
+
    // switch slot power off
 
    setOutputs(isAllOff);
@@ -332,8 +350,6 @@ int LinslotWindow::initInterface()
    writeBit(bitPenaltyIndSlot3, off);
    writeBit(bitPenaltyIndSlot4, off);
    switchOutputs(isNoPowerInd, on);
-
-   return success;
 }
 
 //***************************************************************************
@@ -372,7 +388,7 @@ void LinslotWindow::resetWidgets()
       theSlots[i].labelFastLap->setText("");
       theSlots[i].labelLastLap->setText("");
       theSlots[i].labelElapsedLap->setText("0.0");
-      
+
       theSlots[i].tableWidget->setEnabled(false);
       theSlots[i].tableWidget->clear();
       theSlots[i].tableWidget->setEnabled(true);
@@ -395,7 +411,7 @@ void LinslotWindow::resetWidgets()
    }
 
    if (radioButtonLapRace->isChecked())
-      labelLaps->setText(QString::number(setupDialog->getLapCountRace()) + "/" 
+      labelLaps->setText(QString::number(setupDialog->getLapCountRace()) + "/"
                          + QString::number(setupDialog->getLapCountRace()));
    else
       labelLaps->setText("0/" + QString::number(setupDialog->getLapCountTraining()));
@@ -455,7 +471,7 @@ int LinslotWindow::getImagesFor(int led, const char* &ledOn, const char* &ledOff
 void LinslotWindow::setLed(int function, int state)
 {
    const char* ledOn  = "";
-   const char* ledOff = "";   
+   const char* ledOff = "";
 
    if (outputBits[function].ledid <= 0)
       return ;
@@ -565,7 +581,7 @@ void LinslotWindow::writeBit(int function, int state)
 }
 
 //***************************************************************************
-// 
+//
 //***************************************************************************
 
 void LinslotWindow::setPenalty(int slot)
@@ -616,8 +632,8 @@ void LinslotWindow::setSlotPower(int slot, int flag)
       writeBit(bitPowerSlot2, flag);
 
    if (slot & psSlot1 && slot & psSlot2)
-      pushButtonPower->setIcon(QIcon(QString(resourcePath) + 
-                                     (flag ? "pixmap/led-blue-on.gif" : 
+      pushButtonPower->setIcon(QIcon(QString(resourcePath) +
+                                     (flag ? "pixmap/led-blue-on.gif" :
                                       "pixmap/led-blue-off.gif")));
 }
 
@@ -663,7 +679,7 @@ void LinslotWindow::applyOptions()
 
       if (!QAlsaSound::isAvailable())
          QAlsaSound::setDeviceName(oldDevice);
-      
+
    }
 
 #endif
@@ -696,7 +712,7 @@ void LinslotWindow::applyOptions()
 
    /*
    QSqlQuery query("select NAME from profiles where ACTIVE = 'true';");
-   
+
    while (query.next())
       comboBoxDriver1->addItem("GC: " + query.value(0).toString());
    */
@@ -713,10 +729,10 @@ void LinslotWindow::applyOptions()
 
    if ((i = comboBoxCar1->findText(setupDialog->getSettings()->value("car0", "").toString())) >= 0)
       comboBoxCar1->setCurrentIndex(i);
-   
+
    if ((i = comboBoxCar2->findText(setupDialog->getSettings()->value("car1", "").toString())) >= 0)
       comboBoxCar2->setCurrentIndex(i);
-   
+
    setupDialog->getSettings()->endGroup();
 
    supressComboBoxUpdate = no;
@@ -737,7 +753,7 @@ void LinslotWindow::applyOptions()
    else if (setupDialog->getDriverImageMode() == SetupDialog::mdDriver)
       visibleImage = imgDriver;
    else
-      visibleImage = imgCar;   
+      visibleImage = imgCar;
 
    updateDriverImage(labelImageSlot1->width(),
                      labelImageSlot1->height());
@@ -748,8 +764,8 @@ void LinslotWindow::applyOptions()
 
    tell(eloDebug2, "Write 0x%d for spi extension", setupDialog->getWithSpiExtension());
 
-   thread->initIoSetup(setupDialog->getInputMask(), 
-                       setupDialog->getOutputMask(), 
+   thread->initIoSetup(setupDialog->getInputMask(),
+                       setupDialog->getOutputMask(),
                        setupDialog->getWithSpiExtension());
 }
 
@@ -762,7 +778,7 @@ void LinslotWindow::on_comboBoxDriver1_currentIndexChanged(QString value)
    if (!supressComboBoxUpdate)
    {
       strncpy(theSlots[0].driver, value.toAscii(), sizeName);
-      
+
       updateDriverImage(labelImageSlot1->width(),
                         labelImageSlot1->height());
    }
@@ -777,7 +793,7 @@ void LinslotWindow::on_comboBoxDriver2_currentIndexChanged(QString value)
    if (!supressComboBoxUpdate)
    {
       strncpy(theSlots[1].driver, value.toAscii(), sizeName);
-      
+
       updateDriverImage(labelImageSlot1->width(),
                         labelImageSlot1->height());
    }
@@ -792,7 +808,7 @@ void LinslotWindow::on_comboBoxCar1_currentIndexChanged(QString value)
    if (!supressComboBoxUpdate)
    {
       strncpy(theSlots[0].car, value.toAscii(), sizeName);
-      
+
       updateDriverImage(labelImageSlot1->width(),
                         labelImageSlot1->height());
    }
@@ -807,7 +823,7 @@ void LinslotWindow::on_comboBoxCar2_currentIndexChanged(QString value)
    if (!supressComboBoxUpdate)
    {
       strncpy(theSlots[1].car, value.toAscii(), sizeName);
-      
+
       updateDriverImage(labelImageSlot1->width(),
                         labelImageSlot1->height());
    }
@@ -854,7 +870,7 @@ void LinslotWindow::onElapsedTimer()
    int finished = no;
 
    gettimeofday(&tp, 0);
-   
+
    int usec = elapsed(&raceStart, &tp);
 
    labelElapsed->setText(QString::number(usec/1000000.0, 'f', 1));
@@ -869,10 +885,10 @@ void LinslotWindow::onElapsedTimer()
       finished = usec/1000000 >= setupDialog->getMaxTimeLapRace();
    else if (radioButtonTraining->isChecked() && setupDialog->getMaxTimeTraining())
       finished = usec/1000000 >= setupDialog->getMaxTimeTraining();
-   
+
    if (finished)
    {
-      int s = theSlots[0].lap == theSlots[1].lap ? -1 : 
+      int s = theSlots[0].lap == theSlots[1].lap ? -1 :
          theSlots[0].lap > theSlots[1].lap ? 0 : 1;
 
       tell(eloDetail, "Finished after %d seconds of race/training", usec/1000000);
@@ -904,7 +920,7 @@ void LinslotWindow::onTimer()
          case 3: switchOutputs(isPhase4, on); break;
          case 4: switchOutputs(isPhase5, on); break;
       }
-      
+
       countdown++;
    }
 }
@@ -939,7 +955,7 @@ void LinslotWindow::onTimerFlash()
             case omFlashDownSlow: if (count%2) value = upSlow;  break;
             default: value = na;
          }
-         
+
          if (value != na)
          {
             thread->writeBit(outputBitOf(i), value);
@@ -967,7 +983,7 @@ void LinslotWindow::onAnalogInput(const AnalogEvent ioEvent)
    {
       labelFastLap->setText(QString::number(u) + "%");
 
-      tell(eloAlways, "-> U = %d%%; I = %d%% [%d/%d]", 
+      tell(eloAlways, "-> U = %d%%; I = %d%% [%d/%d]",
            u, i, volt, ioEvent.ampere);
       gcValues.append(volt | (ioEvent.ampere << 8));
    }
@@ -991,7 +1007,7 @@ void LinslotWindow::onDigitalInput(const DigitalEvent ioEvent)
    tell(eloDebug, "Debug: Changes detected (%s)", toBinStr(value, buf));
 
    // externer Start/Stop Taster (nicht im test mode) ?
-   
+
    if (isBit(value, bitStartKey))
    {
       if (!countdownStarted)
@@ -1006,10 +1022,10 @@ void LinslotWindow::onDigitalInput(const DigitalEvent ioEvent)
    }
 
    // process lap signals
-   
+
    if (isBit(value, bitIrSlot1))
       atSlotSignal(0, &theEvent.tp);
-   
+
    if (isBit(value, bitIrSlot2))
       atSlotSignal(1, &theEvent.tp);
 
@@ -1119,7 +1135,7 @@ void LinslotWindow::atStartTraining()
 }
 
 //***************************************************************************
-// 
+//
 //***************************************************************************
 
 void LinslotWindow::initRace()
@@ -1158,7 +1174,7 @@ void LinslotWindow::initRace()
 //***************************************************************************
 
 void LinslotWindow::atStart()
-{ 
+{
    // init
 
    countdown = 0;
@@ -1169,7 +1185,7 @@ void LinslotWindow::atStart()
 
    if (QString(theSlots[0].driver).indexOf("GC: ") == 0)
    {
-      QSqlQuery query("select PROFILE_ID from profiles where NAME = '" 
+      QSqlQuery query("select PROFILE_ID from profiles where NAME = '"
                       + QString(theSlots[0].driver[4]) + "';");
 
       if (query.next())
@@ -1180,11 +1196,11 @@ void LinslotWindow::atStart()
          return ;
       }
 
-      tell(eloDebug, "Starting ghost car '%s' profile (%d)", 
+      tell(eloDebug, "Starting ghost car '%s' profile (%d)",
            theSlots[0].driver, theSlots[0].gcProfile);
 
-      thread->startGhostCar(outputBits[bitPwmOutSlot1].bit, 
-                            analogBits[fctGhostISlot1].bit, 
+      thread->startGhostCar(outputBits[bitPwmOutSlot1].bit,
+                            analogBits[fctGhostISlot1].bit,
                             theSlots[0].gcProfile);
 
       gcState = gcsRunning;
@@ -1210,7 +1226,7 @@ void LinslotWindow::atStart()
 //***************************************************************************
 
 void LinslotWindow::atFinish(int slot)
-{   
+{
    timeval tp;
    int usec;
    char buf[100];
@@ -1230,7 +1246,7 @@ void LinslotWindow::atFinish(int slot)
 
    tell(eloDebug, "Total: %2.2d:%2.2d.%06d",
         usec/1000000/60, usec/1000000%60, usec%1000000);
-  
+
    for (int i = 0; i < slotCount; i++)
       tell(eloDebug, "Bahn %d - %d Runden gefahren", i+1, theSlots[i].lap);
 }
@@ -1260,7 +1276,7 @@ void LinslotWindow::atStop(const char* info)
    countdownStarted = no;
    timer->stop();
    timerElapsed->stop();
-   
+
    // slot power off
 
    setOutputs(isAllOff | isNoPowerInd);
@@ -1292,7 +1308,7 @@ void LinslotWindow::atStop(const char* info)
 //***************************************************************************
 // At Jump The Gun
 //***************************************************************************
-  
+
 void LinslotWindow::atJumpTheGun(int slot)
 {
    char info[100];
@@ -1307,7 +1323,7 @@ void LinslotWindow::atJumpTheGun(int slot)
       playSound(sfJumpTheGun);
       theSlots[slot].labelInfo->setText("Frühstart");
 
-      tell(eloAlways, "Jump the gun on slot %d, time penalty of (%d) seconds", 
+      tell(eloAlways, "Jump the gun on slot %d, time penalty of (%d) seconds",
            slot+1, setupDialog->getPenaltyAtJumpTheGun());
 
       setPenalty(slot);
@@ -1321,7 +1337,7 @@ void LinslotWindow::atJumpTheGun(int slot)
 
 void LinslotWindow::atNoFuel(int slot)
 {
-   tell(eloAlways, "No fuel on slot %d, time penalty of (%d) seconds", 
+   tell(eloAlways, "No fuel on slot %d, time penalty of (%d) seconds",
         slot+1, setupDialog->getFuelPenaltyTime());
 
    playSound(sfFuelEmpty);
@@ -1331,7 +1347,7 @@ void LinslotWindow::atNoFuel(int slot)
 }
 
 //***************************************************************************
-// 
+//
 //***************************************************************************
 
 int LinslotWindow::isActiveEdge(int function, int state)
@@ -1376,7 +1392,7 @@ unsigned int LinslotWindow::getChanges(DigitalEvent& ioEvent)
    unsigned int mask, b, state, fctMask;
    int i;
 
-   // init 
+   // init
 
    if (!initialized)
    {
@@ -1414,7 +1430,7 @@ unsigned int LinslotWindow::getChanges(DigitalEvent& ioEvent)
             {
                if (isActiveEdge(fct, state))
                {
-                  tell(eloAlways, "Function '%s' (%d), bit (%d) detected", 
+                  tell(eloAlways, "Function '%s' (%d), bit (%d) detected",
                        inputFunctionName(fct), fct, bit);
                   changedFunctions |= fctMask;
                   lastInputTimes[bit] = ioEvent.tp;
@@ -1458,7 +1474,7 @@ void LinslotWindow::atFuelTimer(int slot)
    else
    {
       theSlots[slot].fuelLevel += setupDialog->getFuelingPerSecond() / 10.0;
-      tell(eloAlways, "Added %.2f liter fuel for slot (%d)", 
+      tell(eloAlways, "Added %.2f liter fuel for slot (%d)",
            setupDialog->getFuelingPerSecond() / 10.0, slot);
 
       if (theSlots[slot].fuelLevel > setupDialog->getFuelMax())
@@ -1485,7 +1501,7 @@ void LinslotWindow::atFuelSignal(int slot, const timeval*, int fuelStartSignal)
    if (!raceRunning)
       return ;
 
-   tell(eloDebug, "Got '%s' signal for slot %d", 
+   tell(eloDebug, "Got '%s' signal for slot %d",
         fuelStartSignal ? "start fueling" : "stop fueling", slot);
 
    if (!setupDialog->getFuelingActive())
@@ -1523,8 +1539,8 @@ void LinslotWindow::decrementFuel(int slot, unsigned int usec)
 
       diffPercent = qMin(diffPercent, 30.0);
 
-      tell(eloDebug3, "Debug: Diff to average lap %2d,%03d seconds => (%.2f%%), uAverageLap (%u), usec (%u)", 
-           (uAverageLap-usec)/1000000L, labs((uAverageLap-usec))%1000000L, 
+      tell(eloDebug3, "Debug: Diff to average lap %2d,%03d seconds => (%.2f%%), uAverageLap (%u), usec (%u)",
+           (uAverageLap-usec)/1000000L, labs((uAverageLap-usec))%1000000L,
            diffPercent, uAverageLap, usec);
 
       double korr = 0;
@@ -1535,8 +1551,8 @@ void LinslotWindow::decrementFuel(int slot, unsigned int usec)
          korr = 100 - diffPercent/10.0 * setupDialog->getFuelFactorSlowLap();  // slower
 
       theSlots[slot].fuelLevel -= f/100 * korr;
-      
-      tell(eloAlways, "Calc fuel, decrement with (%.2f liter) => (%.2f); korr was (%.2f)", 
+
+      tell(eloAlways, "Calc fuel, decrement with (%.2f liter) => (%.2f); korr was (%.2f)",
            f/100 * korr, theSlots[slot].fuelLevel, korr);
 
       if (theSlots[slot].fuelLevel <= 0)
@@ -1560,16 +1576,16 @@ void LinslotWindow::atSlotSignal(int slot, const timeval* tp)
    int rnd = 0;
    int other = slot == 0 ? 1 : 0;
    unsigned int usec = 0;
-   
+
    tell(eloDebug, "Debug: Signal slot %d", slot);
 
    if (slot == 0 && !thread->readOutBit(outputBitOf(bitPowerSlot1)))
-      return; 
+      return;
 
    if (slot == 1 && !thread->readOutBit(outputBitOf(bitPowerSlot2)))
-      return; 
+      return;
 
-   // recording ghostcar 
+   // recording ghostcar
 
    if (gcState == gcsRecording && slot == gcSlot)
    {
@@ -1589,7 +1605,7 @@ void LinslotWindow::atSlotSignal(int slot, const timeval* tp)
       tell(eloAlways, "GC recording started");
       gcState = gcsRecording;
       labelInfo->setText("Ghostcar");
-      thread->recordGhostCar(analogBits[fctGhostUSlot1].bit, 
+      thread->recordGhostCar(analogBits[fctGhostUSlot1].bit,
                              analogBits[fctGhostISlot1].bit);
 
       return ;
@@ -1640,7 +1656,7 @@ void LinslotWindow::atSlotSignal(int slot, const timeval* tp)
 
       labelFirst->setText("1 " + QString(theSlots[other].driver));
       labelSecond->setText("2 " + QString(theSlots[slot].driver));
-      labelSecondTime->setText("+" + QString::number(diff) + " lap" 
+      labelSecondTime->setText("+" + QString::number(diff) + " lap"
                                + QString(diff > 1 ? "s": ""));
    }
    else
@@ -1656,7 +1672,7 @@ void LinslotWindow::atSlotSignal(int slot, const timeval* tp)
       labelSecond->setText("2 " + QString(theSlots[other].driver));
 
       if (diff)
-         labelSecondTime->setText("+" + QString::number(diff) + " lap" 
+         labelSecondTime->setText("+" + QString::number(diff) + " lap"
                                   + QString(diff > 1 ? "s": ""));
 
       else if (oldSecond != labelSecond->text())
@@ -1689,7 +1705,7 @@ void LinslotWindow::atSlotSignal(int slot, const timeval* tp)
    {
       fastLapTime = usec;
 
-      labelFastLap->setText("Schnellste Runde\n" 
+      labelFastLap->setText("Schnellste Runde\n"
                             + QString(theSlots[slot].driver)
                             + QString("  -  ")
                             + QString::number(usec/1000000.0, 'f', 3)
@@ -1705,13 +1721,13 @@ void LinslotWindow::atSlotSignal(int slot, const timeval* tp)
       theSlots[slot].labelFastLap->setText(QString::number(usec/1000000.0, 'f', 3));
       theSlots[slot].fastLapTime = usec;
    }
-      
+
    // fueling
 
    if (setupDialog->getFuelingActive())
       decrementFuel(slot, usec);
 
-   // 
+   //
 
    if (radioButtonLapRace->isChecked())
       rnd = setupDialog->getLapCountRace() - theSlots[slot].lap;
@@ -1726,27 +1742,27 @@ void LinslotWindow::atSlotSignal(int slot, const timeval* tp)
 
    if (theSlots[slot].lap > theSlots[other].lap)
    {
-      if (radioButtonLapRace->isChecked())      
-         labelLaps->setText(QString::number(rnd) + "/" 
+      if (radioButtonLapRace->isChecked())
+         labelLaps->setText(QString::number(rnd) + "/"
                             + QString::number(setupDialog->getLapCountRace()));
       else
-         labelLaps->setText(QString::number(rnd) + "/" 
+         labelLaps->setText(QString::number(rnd) + "/"
                             + QString::number(setupDialog->getLapCountTraining()));
    }
-   
+
    theSlots[slot].lastSignal = *tp;
 
-   if (radioButtonLapRace->isChecked() && 
+   if (radioButtonLapRace->isChecked() &&
        theSlots[slot].lap >= setupDialog->getLapCountRace())
    {
-      tell(eloDetail, "Race finished after %d laps of slot %d", 
+      tell(eloDetail, "Race finished after %d laps of slot %d",
            theSlots[slot].lap, slot);
       atFinish(slot);
    }
-   else if (radioButtonTraining->isChecked() && 
+   else if (radioButtonTraining->isChecked() &&
             theSlots[slot].lap >= setupDialog->getLapCountTraining())
    {
-      tell(eloDetail, "Training finished after %d laps of slot %d", 
+      tell(eloDetail, "Training finished after %d laps of slot %d",
            theSlots[slot].lap, slot);
       atFinish(na);
    }
@@ -1759,7 +1775,7 @@ void LinslotWindow::atSlotSignal(int slot, const timeval* tp)
 void LinslotWindow::updateDriverImage(int width, int height)
 {
    QString path;
-   
+
    for (int i = 0; i < slotCount; i++)
    {
       if (visibleImage == imgDriver)
@@ -1770,7 +1786,7 @@ void LinslotWindow::updateDriverImage(int width, int height)
       if (path.size() && QFile::exists(path))
       {
          QPixmap pixmap(path);
-         
+
          theSlots[i].labelImage->setPixmap(
             pixmap.scaled(width, height, Qt::KeepAspectRatio));
       }
@@ -1812,7 +1828,7 @@ void LinslotWindow::paintEvent(QPaintEvent* event)
 
    // rescale image if nessecarry
 
-   if (lastHeight != labelImageSlot1->height() 
+   if (lastHeight != labelImageSlot1->height()
       || lastWidth != labelImageSlot1->width())
    {
       lastHeight = labelImageSlot1->height();
@@ -1833,16 +1849,16 @@ int LinslotWindow::openDb()
 
    // db path
 
-   sprintf(dbPath, "%s/%s", configPath.toAscii().constData(), 
+   sprintf(dbPath, "%s/%s", configPath.toAscii().constData(),
            setupDialog->getDatabaseName());
 
    // Open database via QT
 
    QSqlDatabase _db;
-   
+
    _db = QSqlDatabase::addDatabase("QSQLITE");
    _db.setDatabaseName(dbPath);
-     
+
    if (!_db.open())
    {
       tell(eloAlways, "opening database failed :(");
@@ -1865,17 +1881,17 @@ int LinslotWindow::openDb()
    {
       if ((status = db->execute("select * from races;")) != success)
       {
-         if (QMessageBox::question(this, "Warnung", "Tabellen nicht gefunden, anlegen?", 
+         if (QMessageBox::question(this, "Warnung", "Tabellen nicht gefunden, anlegen?",
                                    QMessageBox::Yes, QMessageBox::No) == QMessageBox::Yes)
          {
             createDb();
-            
+
             if ((status = db->execute("select * from races;")) != success)
                QMessageBox::warning(this, "Fehler", "Tabellen konnten nicht angelegt werden!");
          }
       }
    }
-   
+
    if (status != success)
    {
       db->close();
@@ -1905,7 +1921,7 @@ int LinslotWindow::createDb()
                          "LAP_LENGTH REAL, "                             \
                          "COURSE TEXT"                                   \
                          ");");
-   
+
    delete query;
 
    query = new QSqlQuery("CREATE TABLE laps ("                         \
@@ -1916,22 +1932,22 @@ int LinslotWindow::createDb()
                          "PROFILE_ID INTEGER, "                        \
                          "LAP_TIME REAL"                               \
                          ");");
-   
+
    delete query;
-   
+
    query = new QSqlQuery("CREATE TABLE drivers ("                       \
                          "DRIVER_ID INTEGER PRIMARY KEY AUTOINCREMENT, " \
                          "NAME TEXT"                                    \
                          ");");
-   
+
    delete query;
-   
+
    query = new QSqlQuery("CREATE TABLE courses ("                       \
                          "COURSE_ID INTEGER PRIMARY KEY AUTOINCREMENT, " \
                          "LENGTH REAL, "                                \
                          "NAME TEXT"                                    \
                          ");");
-   
+
 
    delete query;
 
@@ -1996,30 +2012,30 @@ int LinslotWindow::saveRace()
    // courseId = getCourseId();
 
    db->prepare("INSERT INTO races(DRIVER1,DRIVER2,DATE,LAPS,LAP_LENGTH,COURSE) "\
-               "VALUES(?,?,datetime(?, 'unixepoch', 'utc'),?,?,?);", 
+               "VALUES(?,?,datetime(?, 'unixepoch', 'utc'),?,?,?);",
                sqlInsertRace);
 
    db->prepare("INSERT INTO laps(RACE_ID,DRIVER_NR,LAP_NR,LAP_TIME) "\
-               "VALUES(?,?,?,?);", 
+               "VALUES(?,?,?,?);",
                sqlInsertLap);
 
    db->execute("BEGIN;");
 
    db->reset(sqlInsertRace);
-   
+
    db->bindInt(sqlInsertRace,    1, driver1);
    db->bindInt(sqlInsertRace,    2, driver2);
    db->bindInt(sqlInsertRace,    3, time(0));
    db->bindInt(sqlInsertRace,    4, setupDialog->getLapCountRace());
    db->bindDouble(sqlInsertRace, 5, setupDialog->getSlotLength());
    db->bindText(sqlInsertRace,   6, setupDialog->getCourseName());
-   
+
    status = db->step(sqlInsertRace);
-   
+
    if (status != 0)
       tell(eloAlways, "sqlite3_step(INSERT INTO races): '%s' (%d)",
            db->lastError(), status);
-   
+
    int raceId = db->getInsertRowId();  // buggy ... ??
 
    for (int l = 0; l < tableWidgetSlot1->rowCount(); l++)
@@ -2039,9 +2055,9 @@ int LinslotWindow::saveRace()
          db->bindText(sqlInsertLap, 4, duration); // LAP_TIME
       else
          db->bindNull(sqlInsertLap, 4);           // LAP_TIME
-      
+
       status = db->step(sqlInsertLap);
-      
+
       if (status != 0)
          tell(eloAlways, "sqlite3_step(INSERT INTO laps): %s (%d)",
               db->lastError(), status);
@@ -2050,7 +2066,7 @@ int LinslotWindow::saveRace()
    for (int l = 0; l < tableWidgetSlot2->rowCount(); l++)
    {
       db->reset(sqlInsertLap);
-      
+
       duration = 0;
 
       if (tableWidgetSlot2->item(l, 1))
@@ -2059,23 +2075,23 @@ int LinslotWindow::saveRace()
       db->bindInt(sqlInsertLap, 1, raceId);       // RACE_ID
       db->bindInt(sqlInsertLap, 2, driver2);      // DRIVER_NR
       db->bindInt(sqlInsertLap, 3, l+1);          // LAP_NR
-      
+
       if (duration)
          db->bindText(sqlInsertLap, 4, duration); // LAP_TIME
       else
          db->bindNull(sqlInsertLap, 4);           // LAP_TIME
 
       status = db->step(sqlInsertLap);
-      
+
       if (status != 0)
-         tell(eloAlways, "sqlite3_step(INSERT INTO laps): %s (%d)", 
+         tell(eloAlways, "sqlite3_step(INSERT INTO laps): %s (%d)",
               db->lastError(), status);
    }
-   
+
    db->execute("COMMIT;");
 
    db->finalize(sqlInsertRace);
-   db->finalize(sqlInsertLap);  
+   db->finalize(sqlInsertLap);
 
    return 0;
 }
@@ -2162,7 +2178,7 @@ int LinslotWindow::getCourseId()
 }
 
 //***************************************************************************
-// 
+//
 //***************************************************************************
 
 void LinslotWindow::on_toolButtonRecordGhostCar_clicked()
@@ -2210,7 +2226,7 @@ void LinslotWindow::storeGcRecording(QList<unsigned short>* values)
       {
          // name schon vergeben ... ?
 
-         QSqlQuery query("select NAME from profiles " 
+         QSqlQuery query("select NAME from profiles "
                          "where NAME = '" + name + "';");
 
          if (!query.next())
@@ -2234,9 +2250,9 @@ void LinslotWindow::storeGcRecording(QList<unsigned short>* values)
       insert->bindValue(":length", setupDialog->getSlotLength());
       insert->exec();
 
-      // get id of new profile 
+      // get id of new profile
 
-      QSqlQuery query("select PROFILE_ID from profiles " 
+      QSqlQuery query("select PROFILE_ID from profiles "
                       "where NAME = '" + name + "';");
 
       if (!query.next())
@@ -2250,7 +2266,7 @@ void LinslotWindow::storeGcRecording(QList<unsigned short>* values)
       // create lap profile records
 
       insert->prepare("INSERT INTO lap_profiles("
-                      "PROFILE_ID, SEQUENCE, VOLT, AMPERE) " 
+                      "PROFILE_ID, SEQUENCE, VOLT, AMPERE) "
                       "VALUES(:prid, :seq, :volt, :ampere);");
 
       for (int i = 0; i < values->size(); i++)
@@ -2281,7 +2297,7 @@ void LinslotWindow::simulateEvent(int fct, int state)
 {
    static unsigned int lastValue = 0x0FFFFFFFF;
    DigitalEvent event;
-   
+
    gettimeofday(&event.tp, 0);
 
    if (inputBits[fct].mode != teRising)
@@ -2290,7 +2306,7 @@ void LinslotWindow::simulateEvent(int fct, int state)
    setBitTo(lastValue, inputBitOf(fct), state);
 
    event.value = lastValue;
-   emit onDigitalInput(event);  
+   emit onDigitalInput(event);
 }
 
 void LinslotWindow::on_toolButtonSignalSlot1_pressed()
@@ -2411,7 +2427,7 @@ void LinslotWindow::on_toolButtonTest_clicked()
    tableView->resizeColumnsToContents();
    tableView->resizeRowsToContents();
 
-   
+
    // profileDialog->setAnimated(false);
    profileDialog->exec();
    applyOptions();

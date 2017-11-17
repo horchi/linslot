@@ -26,14 +26,8 @@
 
 #include <iothread.hpp>
 #include <common.hpp>
-
-#ifdef WITH_IOWARRIOR
-#  include <iow.hpp>
-#endif
-
-#ifdef WITH_ARDUINO
-#  include <arduino.hpp>
-#endif
+#include <linslot.hpp>
+#include <arduino.hpp>
 
 //***************************************************************************
 // Class IoThread
@@ -42,9 +36,10 @@
 // Object
 //***************************************************************************
 
-IoThread::IoThread()
+IoThread::IoThread(LinslotWindow* aLinslot)
    : QThread()
 {
+   linslot = aLinslot;
    testMode = no;
    running = no;
    *device = 0;
@@ -54,16 +49,10 @@ IoThread::IoThread()
 
    gcReplayTimer = new QTimer();
 
-   connect(gcReplayTimer, SIGNAL(timeout()), this, 
+   connect(gcReplayTimer, SIGNAL(timeout()), this,
            SLOT(onReplayTimer()));
 
-#ifdef WITH_IOWARRIOR
-   ioDevice = new Iow;
-#elif WITH_ARDUINO
    ioDevice = new Arduino;
-#else
-   ioDevice = 0;
-#endif
 }
 
 IoThread::~IoThread()
@@ -78,7 +67,7 @@ IoThread::~IoThread()
 //***************************************************************************
 
 int IoThread::init()
-{  
+{
    if (!ioDevice)
    {
       tell(eloAlways, "No IO device compiled in, aborting!");
@@ -99,7 +88,7 @@ void IoThread::setDevice(const char* dev)
 
    if (strcmp(device, dev) != 0)
    {
-      strncpy(device, dev, 100); 
+      strncpy(device, dev, 100);
       device[100] = 0;
    }
 }
@@ -129,7 +118,7 @@ void IoThread::changeDevice(const char* dev)
 int IoThread::exit()
 {
    // Close device
-   
+
    close();
 
    return success;
@@ -152,6 +141,8 @@ int IoThread::open()
    ioDevice->setWriteTimeout(1000);
    ioDevice->setTimeout(1000);
 
+   linslot->ioOpened();
+
    return success;
 }
 
@@ -162,7 +153,7 @@ int IoThread::open()
 int IoThread::close()
 {
    ioDevice->close();
-   
+
    return 0;
 }
 
@@ -186,7 +177,7 @@ void IoThread::startGhostCar(char pwmBit, char iBit, int profileId)
 
    gcValueIndex = 0;
 
-   QSqlQuery q("select VOLT, AMPERE from lap_profiles where PROFILE_ID = '" + 
+   QSqlQuery q("select VOLT, AMPERE from lap_profiles where PROFILE_ID = '" +
                QString::number(profileId) + "' order by LAP_PROFILE_ID;");
 
    while (q.next())
@@ -256,7 +247,7 @@ void IoThread::onReplayTimer()
 }
 
 //***************************************************************************
-// 
+//
 //***************************************************************************
 
 void IoThread::ghostCarSync()
@@ -265,7 +256,7 @@ void IoThread::ghostCarSync()
    gcValueIndex = 0;
    gcPause = 0;
 
-   ioDevice->writeGhostCarValue(gcValues.at(gcValueIndex).volt, 
+   ioDevice->writeGhostCarValue(gcValues.at(gcValueIndex).volt,
                                 gcValues.at(gcValueIndex).ampere);
    gcValueIndex++;
 
@@ -330,7 +321,7 @@ void IoThread::control()
 
    switch (command)
    {
-      case cDigitalIn: 
+      case cDigitalIn:
       {
          DigitalEvent event;
          DigitalInput* input;
@@ -341,15 +332,15 @@ void IoThread::control()
             event.value = input->value;
             event.tp = addMs2Tv(ioDevice->getBoardStartTime(), input->time);
 
-            tell(eloDebug, "Got digital input (%s)", 
+            tell(eloDebug, "Got digital input (%s)",
                  toBinStr(input->value, buf));
 
             emit onDigitalInput(event);
          }
-     
+
          break;
-      }  
-      case cAnalogIn: 
+      }
+      case cAnalogIn:
       {
          AnalogEvent event;
          AnalogInput* input;
@@ -364,20 +355,20 @@ void IoThread::control()
          }
 
          break;
-      }  
-      case cDebug: 
+      }
+      case cDebug:
       {
          DebugValue* debug;
-         
+
          if (getMessage())
          {
             debug = (DebugValue*)getMessage();
-            
+
             tell(eloAlways, "<- [%s] (0x%lx)", debug->string, debug->value);
          }
 
          break;
-      }  
+      }
       case cGhostCarBufferFull:
       {
          gcPause = 50;  // wait 0.5 seconds

@@ -99,7 +99,7 @@ class LinslotWindow : public QMainWindow, private Ui::LinslotWindow, public Slot
          isPenaltyIndSlot12 = isPenaltyIndSlot1 | isPenaltyIndSlot2,   // Spur 1 bei 2 Spuren
          isPenaltyIndSlot22 = isPenaltyIndSlot3 | isPenaltyIndSlot4,   // Spur 2 bei 2 Spuren
          isPenaltyInd       = isPenaltyIndSlot12 | isPenaltyIndSlot22,
-         
+
          isAllOn      = isPhase5 | isGreen | isNoPowerInd | isFuelingInd | isPenaltyInd
       };
 
@@ -151,8 +151,9 @@ class LinslotWindow : public QMainWindow, private Ui::LinslotWindow, public Slot
 
       void init();
       void exit();
-      int initInterface();
+      // int initInterface();
       void initRace();
+      void ioOpened();
 
    protected:
 
@@ -237,7 +238,7 @@ class LinslotWindow : public QMainWindow, private Ui::LinslotWindow, public Slot
       int gcSlot;
 
       // dialogs
-      
+
       SetupDialog* setupDialog;
       HighscoreDialog* highscoreDialog;
 
