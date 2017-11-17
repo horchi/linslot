@@ -149,7 +149,6 @@ class LinslotWindow : public QMainWindow, private Ui::LinslotWindow, public Slot
 
       void init();
       void exit();
-      // int initInterface();
       void initRace();
       void ioOpened();
 
@@ -246,6 +245,7 @@ class LinslotWindow : public QMainWindow, private Ui::LinslotWindow, public Slot
 
       void onDigitalInput(const DigitalEvent ioEvent);
       void onAnalogInput(const AnalogEvent ioEvent);
+      void onDeviceConnected();
 
       void on_pushButtonPower_clicked();
       void on_pushButtonSaveToDb_clicked();

@@ -33,7 +33,7 @@ class IoThread : public QThread, public SlotService, public IoService
 
       // object
 
-      IoThread(LinslotWindow* aLinslot);
+      IoThread();
       virtual ~IoThread();
 
       // interface
@@ -71,6 +71,7 @@ class IoThread : public QThread, public SlotService, public IoService
 
       void onDigitalInput(const DigitalEvent &ioEvent);
       void onAnalogInput(const AnalogEvent &ioEvent);
+      void onDeviceConnected();
 
    private slots:
 
@@ -89,7 +90,6 @@ class IoThread : public QThread, public SlotService, public IoService
 
       // data
 
-      LinslotWindow* linslot;
       int gcPause;
       QTimer* gcReplayTimer;
       int gcValueIndex;

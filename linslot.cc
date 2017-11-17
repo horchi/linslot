@@ -100,7 +100,7 @@ LinslotWindow::LinslotWindow()
 
    // thread stuff
 
-   thread = new IoThread(this);
+   thread = new IoThread();
 
    // connect thread
 
@@ -112,6 +112,9 @@ LinslotWindow::LinslotWindow()
 
    connect(thread, SIGNAL(onAnalogInput(const AnalogEvent)),
            this, SLOT(onAnalogInput(const AnalogEvent)));
+
+   connect(thread, SIGNAL(onDeviceConnected()),
+           this, SLOT(onDeviceConnected()));
 
    // start io thread
 
@@ -291,41 +294,10 @@ void LinslotWindow::exit()
 }
 
 //***************************************************************************
-//
-//***************************************************************************
-/*
-int LinslotWindow::initInterface()
-{
-   int cnt = 0;
-
-   // start io thread
-
-   thread->init();
-   thread->setDevice(setupDialog->getUsbDevice());
-   thread->start();
-   thread->setTestMode(testMode);
-
-   tell(eloAlways, "Debug: Waiting for io device");
-
-   // TODO, besser via signal anstoßen statt hier warten !
-
-   while (!thread->isOpen())
-   {
-      sleep(1);
-      cnt++;
-
-      if (testMode && cnt > 2)
-         break;
-   }
-
-   return success;
-} */
-
-//***************************************************************************
 // IO Opened
 //***************************************************************************
 
-void LinslotWindow::ioOpened()
+void LinslotWindow::onDeviceConnected()
 {
    if (!thread->isOpen())
       return;

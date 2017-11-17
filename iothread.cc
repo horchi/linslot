@@ -36,10 +36,9 @@
 // Object
 //***************************************************************************
 
-IoThread::IoThread(LinslotWindow* aLinslot)
+IoThread::IoThread()
    : QThread()
 {
-   linslot = aLinslot;
    testMode = no;
    running = no;
    *device = 0;
@@ -48,11 +47,9 @@ IoThread::IoThread(LinslotWindow* aLinslot)
    active = no;
 
    gcReplayTimer = new QTimer();
-
-   connect(gcReplayTimer, SIGNAL(timeout()), this,
-           SLOT(onReplayTimer()));
-
    ioDevice = new Arduino;
+
+   connect(gcReplayTimer, SIGNAL(timeout()), this, SLOT(onReplayTimer()));
 }
 
 IoThread::~IoThread()
@@ -133,7 +130,7 @@ int IoThread::open()
    ioDevice->setWriteTimeout(1000);
    ioDevice->setTimeout(1000);
 
-   linslot->ioOpened();
+   emit onDeviceConnected();
 
    return success;
 }
@@ -324,8 +321,7 @@ void IoThread::control()
             event.value = input->value;
             event.tp = addMs2Tv(ioDevice->getBoardStartTime(), input->time);
 
-            tell(eloDebug, "Got digital input (%s)",
-                 toBinStr(input->value, buf));
+            tell(eloDebug, "Got digital input (%s)", toBinStr(input->value, buf));
 
             emit onDigitalInput(event);
          }
@@ -386,7 +382,7 @@ void IoThread::run()
 
    // loop
 
-   tell(eloDebug, "Thread now running");
+   tell(eloDebug, "IO thread started");
 
    while (running)
    {
@@ -397,11 +393,10 @@ void IoThread::run()
       }
 
       if ((status = ioDevice->look(command)) == success)
-      {
          control();
-         continue;
-      }
-
-      usleep(100);
+      else
+         usleep(100);
    }
+
+   tell(eloDebug, "IO thread ennded");
 }

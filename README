@@ -4,37 +4,51 @@
 ###################
 
 - Arduino (z.B. Diecimila)
-- qt4, qt4-dev (bei gängigen Distributionen als Paket verfügbar)
-- libsqlite3, libsqlite3-dev (bei gängigen Distributionen als Paket verfügbar)
+- qt4, qt4-dev
+- libsqlite3, libsqlite3-dev
 
-Arduino
--------
+Installation der benötigten Packete (am Beipiel ubbuntu):
+---------------------------------------------------------
+
+sudo apt install gcc g++ make git sqlite3 libsqlite3-dev libasound2-dev alsa-oss
+sudo apt qt4-qmake libqt4-dev qt4-dev-tools
+
+Für den Arduino Code
+---------------------
 
 - avr-libc, avrdude, gcc-avr, binutils-avr (bei gängigen Distributionen als Paket verfügbar)
 - die Entwicklungsumgebung von hier http://www.arduino.cc/en/Main/Software
   davon wird nicht unbedingt die IDE sondern die Zusatz-Libraries benötigt
 
 
-###############
-     Build
-###############
+####################
+  Build / Install
+####################
 
-auspacken
-> tar xvjf linslot-x.x.x.tar.bz2
-> cd linslot
+Quellcode holen (muss nur einmal gemacht werden):
 
-> qmake
-  je nach QT-Installation qmake-qt4 (wichtig ist das qmake von qt4.x verwendet wird)
-> make
+#> cd
+#> git clone https://github.com/horchi/linslot.git
+
+Ansonsten - wenn es eine neue Version gibt) aktualisierern:
+
+#> cd ~/linslot
+#> git
+
+build / install
+
+#> cd ~/linslot
+#> ./build.sh
+
 
 Arduino Build/Upload
 --------------------
 
 Der Build Prozess ist nur nötig wenn man am Code des ATmega Programmteils etwas verändert hat,
-ansonsten kann man glich zum nächten Schritt (upload) übergehen da das HEX File
+ansonsten kann man gleich zum nächten Schritt (upload) übergehen da das HEX File
 im Tarball enthalten ist.
 
-> cd linslot/avr
+> cd ./avr
 > make clean
 > make -s
 
@@ -46,28 +60,6 @@ Nun noch der Upload
 Hinweius:
 Sollte der upload nicht starten hilft bei mir das gleichzeitige 'kurze' betätigen
 der Reset-Taste auf dem Arduino (gleichzeitig mit dem starten von 'make upload')
-
-
-################
-  Installation
-################
-
-System:
--------
-Das Kernel Modul für den Arduino solle nach der Installation automatisch geladen werden.
-Modul 'ftdi_sio'
-
-
-Programm
---------
-
-> cd linslot
-> su root
-> mkdir -p /usr/local/share/linslot/
-> cp -a pixmap sound /usr/local/share/linslot/
-> chmod -R a+rX /usr/local/share/linslot/
-> cp linslot /usr/local/bin
-> chmod 755 /usr/local/bin/linslot
 
 
 ###############
