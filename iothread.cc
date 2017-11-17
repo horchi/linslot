@@ -1,7 +1,7 @@
 //***************************************************************************
 // Group Linslot / Linux - Slotrace Manager
 // File iothread.cc
-// Date 28.11.06 - Jörg Wendel
+// Date 17.11.17 - Jörg Wendel
 // This code is distributed under the terms and conditions of the
 // GNU GENERAL PUBLIC LICENSE. See the file COPYING for details.
 //***************************************************************************
@@ -59,7 +59,7 @@ IoThread::~IoThread()
 {
    exit();
 
-   if (ioDevice) delete ioDevice;
+   delete ioDevice;
 }
 
 //***************************************************************************
@@ -68,12 +68,6 @@ IoThread::~IoThread()
 
 int IoThread::init()
 {
-   if (!ioDevice)
-   {
-      tell(eloAlways, "No IO device compiled in, aborting!");
-      return fail;
-   }
-
    return success;
 }
 
@@ -133,11 +127,9 @@ int IoThread::open()
    close();
 
    if (ioDevice->open(device) != success)
-   {
-      tell(eloAlways, "Failed to open device '%s<N>'", device);
       return fail;
-   }
 
+   ioDevice->flush();
    ioDevice->setWriteTimeout(1000);
    ioDevice->setTimeout(1000);
 
@@ -267,25 +259,25 @@ void IoThread::ghostCarSync()
 // At Trouble
 //***************************************************************************
 
-int IoThread::atTrouble()
+int IoThread::checkAndOpenConnetion()
 {
    const int retryEvery = 10;
-   static int lastTry = time(0);
+   static int lastTry = 0;
 
-   tell(eloAlways, "Retrying to open in %d seconds", lastTry + retryEvery - time(0));
+   if (testMode)
+      return success;
 
-   if (time(0) < lastTry + retryEvery)
-      return ignore;
-
-   if (!ioDevice->isOpen())
+   if (!ioDevice->isOpen() && time(0) >= lastTry + retryEvery)
    {
-      tell(eloAlways, "Retrying to open device");
-      lastTry = time(0);
+      int state = open();
 
-      return open();
+      if (state != success)
+         tell(eloAlways, "Retrying to open in %d seconds", retryEvery);
+
+      lastTry = time(0);
    }
 
-   return done;
+   return ioDevice->isOpen() ? success : fail;
 }
 
 //***************************************************************************
@@ -392,25 +384,15 @@ void IoThread::run()
 
    running = yes;
 
-   // first open io device
-   // and flush old input data
-
-   open();
-   ioDevice->flush();
-
    // loop
 
    tell(eloDebug, "Thread now running");
 
    while (running)
    {
-      if (!ioDevice->isOpen())
+      if (checkAndOpenConnetion() != success)
       {
-         if (!testMode)
-            atTrouble();
-
          sleep(1);
-
          continue ;
       }
 

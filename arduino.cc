@@ -130,10 +130,10 @@ int Arduino::open(const char* dev)
    // flags += FILE_FLAG_OVERLAPPED; // wenn event-driven
 
    fdDevice = CreateFileA(deviceName, GENERIC_READ|GENERIC_WRITE,
-                          FILE_SHARE_READ|FILE_SHARE_WRITE, 0, 
+                          FILE_SHARE_READ|FILE_SHARE_WRITE, 0,
                           OPEN_EXISTING, flags, 0);
-   
-   if (fdDevice == INVALID_HANDLE_VALUE) 
+
+   if (fdDevice == INVALID_HANDLE_VALUE)
    {
       fdDevice = 0;
       deviceMutex.unlock();
@@ -169,17 +169,17 @@ int Arduino::open(const char* dev)
    config.dcb.fParity = FALSE;
 
    // data bits, stop bits
-   
+
    config.dcb.ByteSize = 8;
    config.dcb.StopBits = ONESTOPBIT;
 
    // timeouts
 
-   // Setting 0 indicates that timeouts are not used 
-   // for read nor write operations; 
-   // however read() and write() functions will 
+   // Setting 0 indicates that timeouts are not used
+   // for read nor write operations;
+   // however read() and write() functions will
    // still block. Set -1 to provide
-   // non-blocking behaviour (read() and write() 
+   // non-blocking behaviour (read() and write()
    // will return immediately).
 
    timeouts.ReadIntervalTimeout = 5;
@@ -202,9 +202,9 @@ int Arduino::open(const char* dev)
    // first ask about the boardtime
 
    state = initBoardTime();
-   recordGhostCar(na, na);    // switch off ghostcar recording 
+   recordGhostCar(na, na);    // switch off ghostcar recording
 
-   tell(eloAlways, "Initializing io device %s", 
+   tell(eloAlways, "Initializing io device %s",
         state == success ? "succeeded" : "failed");
 
    opened = yes;
@@ -230,9 +230,9 @@ int Arduino::close()
 
       tcsetattr(fdDevice, TCSANOW, &oldtio);
       ::close(fdDevice);
-      
+
 #else
-    
+
       CloseHandle(fdDevice);
 
 #endif
@@ -252,7 +252,7 @@ int Arduino::close()
 int Arduino::reopen(const char* dev)
 {
    close();
-   
+
    return open(dev);
 }
 
@@ -263,17 +263,17 @@ int Arduino::reopen(const char* dev)
 int Arduino::flush()
 {
    byte command;
-   
+
    if (fdDevice)
    {
 
 #ifdef Q_OS_WIN32
-      
+
       FlushFileBuffers(fdDevice);
 
 #endif
 
-      while (look(command) == success) 
+      while (look(command) == success)
          ;
    }
 
@@ -310,7 +310,7 @@ int Arduino::initBoardTime()
       tell(eloAlways, "Board time initialized after (%d) tries!", cnt);
    else
       tell(eloAlways, "Board time failed!");
-        
+
    return command == cBoardTime ? success : fail;
 }
 
@@ -332,7 +332,7 @@ void Arduino::initIoSetup(word bitsInput, word bitsOutput, byte withSpi)
 
    sendCommand(cSetupIo, &sio, sizeof(sio));
 
-   tell(eloDebug, "Setup done with input mask '%s'; output mask '%s'", 
+   tell(eloDebug, "Setup done with input mask '%s'; output mask '%s'",
         toBinStr(sio.bitsInput, buf, 16),
         toBinStr(sio.bitsOutput, buf1, 16));
 
@@ -356,7 +356,7 @@ int Arduino::writeBit(int bit, int state)
    if (!fdDevice || bit == na)
       return fail;
 
-   tell(eloDebug, "Debug: Write bit (%d) value (%d)", 
+   tell(eloDebug, "Debug: Write bit (%d) value (%d)",
         bit, state);
 
    DigitalOutputBit digital;
@@ -378,7 +378,7 @@ int Arduino::writeBit(int bit, int state)
 int Arduino::readOutBit(int bit)
 {
    char buf[100+TB];
-   
+
    tell(eloDebug2, "Debug: out value is '%s'", toBinStr(outValue, buf));
 
    return isBit(outValue, bit);
@@ -464,7 +464,7 @@ void Arduino::writeGhostCarValue(byte volt, byte ampere)
 }
 
 //***************************************************************************
-// 
+//
 //***************************************************************************
 
 void Arduino::flushGhostCar()
@@ -509,9 +509,9 @@ int Arduino::look(byte& command)
       unsigned int boardTime;
       DigitalInput* boardTm;
       boardTm = (DigitalInput*)message;
-      
+
       tell(eloAlways, "<- BoardTime: (%ums)", boardTm->time);
-      
+
       boardTime = boardTm->time;
       tvNow(&tvBoardStartTime);
       tvBoardStartTime = subMs2Tv(tvBoardStartTime, boardTime);
@@ -535,8 +535,7 @@ int Arduino::sendCommand(byte command, void* line, byte size)
 
    if (!fdDevice)
    {
-      tell(eloAlways, "Warning io not opened, can't "
-           "write command (0x%x)!", command);
+      tell(eloAlways, "Warning io not opened, can't write command (0x%x)!", command);
       return done;
    }
 
@@ -561,7 +560,7 @@ int Arduino::sendCommand(byte command, void* line, byte size)
 
    if (line)
       WriteFile(fdDevice, line, size, &written, 0);
-   
+
 #endif
 
    return done;
@@ -574,7 +573,7 @@ int Arduino::sendCommand(byte command, void* line, byte size)
 int Arduino::read(void* buf, unsigned int count)
 {
 #ifndef Q_OS_WIN32
-   
+
    return ::read(fdDevice, buf, count);
 
 #else
@@ -649,7 +648,7 @@ int Arduino::receiveCommand()
          tell(eloAlways, "Error: read failed!");
          return fail;
       }
-      
+
       usleep(100);
    }
 
@@ -669,7 +668,7 @@ int Arduino::receiveCommand()
       else
          count += res;
    }
-   
+
 //    for (int i = 0; i < count; i++)
 //       tell(eloDebug2, "Debug: got byte (0x%d)", message[i]);
 

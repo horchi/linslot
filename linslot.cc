@@ -1,7 +1,7 @@
 //***************************************************************************
 // Group Linslot / Linux - Slotrace Manager
 // File linslot.cc
-// Date 05.12.06 - Jörg Wendel
+// Date 17.1.17 - Jörg Wendel
 // This code is distributed under the terms and conditions of the
 // GNU GENERAL PUBLIC LICENSE. See the file COPYING for details.
 //***************************************************************************
@@ -31,6 +31,8 @@
 
 #include <linslot.hpp>
 #include <lapprofile.hpp>
+
+#include <version.hpp>
 
 //***************************************************************************
 // Object
@@ -117,6 +119,8 @@ LinslotWindow::LinslotWindow()
    thread->setDevice(setupDialog->getUsbDevice());
    thread->start();
    thread->setTestMode(testMode);
+
+   setOutputs(isAllOff);
 
    // apply setup options
 
@@ -243,12 +247,6 @@ void LinslotWindow::init()
               i == 0 ? SLOT(onFuelTimerSlot1()) : SLOT(onFuelTimerSlot2()));
    }
 
-   toolButtonSignalSlot1->setVisible(testMode);
-   toolButtonSignalSlot2->setVisible(testMode);
-   labelTestMode->setVisible(testMode);
-
-   //
-
    resetWidgets();
 
    // db
@@ -332,7 +330,7 @@ void LinslotWindow::ioOpened()
    if (!thread->isOpen())
       return;
 
-   // init
+   labelLedConnected->setPixmap(QPixmap(QString(resourcePath) + "/pixmap/led-green-on.gif"));
 
    thread->initIoSetup(setupDialog->getInputMask(),
                        setupDialog->getOutputMask(),
@@ -379,6 +377,7 @@ void LinslotWindow::resetWidgets()
    QStringList header;
    header << "Zeit" << "km/h";
 
+   frameTestMode->setVisible(testMode);
    labelInfo->setText("Standby");
    labelFastLap->setText("");
 
@@ -420,9 +419,9 @@ void LinslotWindow::resetWidgets()
    labelFirstTime->setText("");
    labelSecond->setText("2");
    labelSecondTime->setText("");
+   labelLedConnected->setPixmap(QPixmap(QString(resourcePath) + "/pixmap/led-green-off.gif"));
 
-   updateDriverImage(labelImageSlot1->width(),
-                     labelImageSlot1->height());
+   updateDriverImage(labelImageSlot1->width(), labelImageSlot1->height());
 }
 
 //***************************************************************************
@@ -762,11 +761,14 @@ void LinslotWindow::applyOptions()
 
    // transfer changes to arduino
 
-   tell(eloDebug2, "Write 0x%d for spi extension", setupDialog->getWithSpiExtension());
+   if (thread->isOpen())
+   {
+      tell(eloDebug2, "Write 0x%d for spi extension", setupDialog->getWithSpiExtension());
 
-   thread->initIoSetup(setupDialog->getInputMask(),
-                       setupDialog->getOutputMask(),
-                       setupDialog->getWithSpiExtension());
+      thread->initIoSetup(setupDialog->getInputMask(),
+                          setupDialog->getOutputMask(),
+                          setupDialog->getWithSpiExtension());
+   }
 }
 
 //***************************************************************************
@@ -983,8 +985,7 @@ void LinslotWindow::onAnalogInput(const AnalogEvent ioEvent)
    {
       labelFastLap->setText(QString::number(u) + "%");
 
-      tell(eloAlways, "-> U = %d%%; I = %d%% [%d/%d]",
-           u, i, volt, ioEvent.ampere);
+      tell(eloAlways, "-> U = %d%%; I = %d%% [%d/%d]", u, i, volt, ioEvent.ampere);
       gcValues.append(volt | (ioEvent.ampere << 8));
    }
 }
@@ -2104,7 +2105,7 @@ int LinslotWindow::getDriverId(const char* driver)
 {
    sqlite3_stmt* sqlSelectDriver;
    sqlite3_stmt* sqlInsertDriver;
-   char sql[1000];
+   char sql[1000+TB];
    int status;
    int id;
 

@@ -76,7 +76,7 @@ Programm
 
 #> linslot
 
-oder ohne Anschluss des Ardunio im Test-Modus (dann gibt es ca. alle zwei Sekunden ein generisches Durchfahrtsignal):
+oder ohne Anschluss des Ardunio im Test-Modus:
 
 #> linslot -t
 
