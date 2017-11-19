@@ -113,8 +113,8 @@ LinslotWindow::LinslotWindow()
    connect(thread, SIGNAL(onAnalogInput(const AnalogEvent)),
            this, SLOT(onAnalogInput(const AnalogEvent)));
 
-   connect(thread, SIGNAL(onDeviceConnected()),
-           this, SLOT(onDeviceConnected()));
+   connect(thread, SIGNAL(onDeviceConnected(const int)),
+           this, SLOT(onDeviceConnected(const int)));
 
    // start io thread
 
@@ -250,17 +250,12 @@ void LinslotWindow::init()
               i == 0 ? SLOT(onFuelTimerSlot1()) : SLOT(onFuelTimerSlot2()));
    }
 
-   resetWidgets();
-
    // db
 
    tell(eloDebug, "open db");
 
    if (openDb() != success)
-   {
-      pushButtonSaveToDb->setEnabled(false);
-      pushButtonHallOfFame->setEnabled(false);
-   }
+      pushButtonHallOfFame->setEnabled(no);
 
    tell(eloDebug, "open db done");
 
@@ -297,29 +292,42 @@ void LinslotWindow::exit()
 // IO Opened
 //***************************************************************************
 
-void LinslotWindow::onDeviceConnected()
+void LinslotWindow::onDeviceConnected(int state)
 {
-   if (!thread->isOpen())
-      return;
+   tell(eloAlways, "Got connection state (%d)", state);
 
-   labelLedConnected->setPixmap(QPixmap(QString(resourcePath) + "/pixmap/led-green-on.gif"));
+   if (state)
+   {
+      thread->deactivate();
+      labelLedConnected->setPixmap(QPixmap(QString(resourcePath) + "/pixmap/led-green-on.gif"));
 
-   thread->initIoSetup(setupDialog->getInputMask(),
-                       setupDialog->getOutputMask(),
-                       setupDialog->getWithSpiExtension());
+      thread->initIoSetup(setupDialog->getInputMask(),
+                          setupDialog->getOutputMask(),
+                          setupDialog->getWithSpiExtension());
 
-   usleep(100000);
-   thread->activate();
+      // switch slot power off
 
-   // switch slot power off
+      setOutputs(isAllOff);
+      clearSlotPower();
+      writeBit(bitPenaltyIndSlot1, off);
+      writeBit(bitPenaltyIndSlot2, off);
+      writeBit(bitPenaltyIndSlot3, off);
+      writeBit(bitPenaltyIndSlot4, off);
+      switchOutputs(isNoPowerInd, on);
 
-   setOutputs(isAllOff);
-   clearSlotPower();
-   writeBit(bitPenaltyIndSlot1, off);
-   writeBit(bitPenaltyIndSlot2, off);
-   writeBit(bitPenaltyIndSlot3, off);
-   writeBit(bitPenaltyIndSlot4, off);
-   switchOutputs(isNoPowerInd, on);
+      sleep(1);
+      thread->flush();
+      thread->activate();
+   }
+   else
+   {
+      thread->deactivate();
+      labelLedConnected->setPixmap(QPixmap(QString(resourcePath) + "/pixmap/led-green-off.gif"));
+   }
+
+   pushButtonStartRace->setEnabled(state || testMode);
+   pushButtonPower->setEnabled(state || testMode);
+   toolButtonRecordGhostCar->setEnabled(state || testMode);
 }
 
 //***************************************************************************
@@ -349,7 +357,7 @@ void LinslotWindow::resetWidgets()
    QStringList header;
    header << "Zeit" << "km/h";
 
-   frameTestMode->setVisible(testMode);
+   frameTestMode->setVisible(testMode);  // #TODO, speciam test mode witch connection and buttons
    labelInfo->setText("Standby");
    labelFastLap->setText("");
 
@@ -360,9 +368,9 @@ void LinslotWindow::resetWidgets()
       theSlots[i].labelLastLap->setText("");
       theSlots[i].labelElapsedLap->setText("0.0");
 
-      theSlots[i].tableWidget->setEnabled(false);
+      theSlots[i].tableWidget->setEnabled(no);
       theSlots[i].tableWidget->clear();
-      theSlots[i].tableWidget->setEnabled(true);
+      theSlots[i].tableWidget->setEnabled(yes);
 
       theSlots[i].tableWidget->setHorizontalHeaderLabels(header);
       theSlots[i].tableWidget->setRowCount(0);
@@ -391,9 +399,23 @@ void LinslotWindow::resetWidgets()
    labelFirstTime->setText("");
    labelSecond->setText("2");
    labelSecondTime->setText("");
-   labelLedConnected->setPixmap(QPixmap(QString(resourcePath) + "/pixmap/led-green-off.gif"));
+
+   if (thread->isOpen())
+      labelLedConnected->setPixmap(QPixmap(QString(resourcePath) + "/pixmap/led-green-on.gif"));
+   else if (testMode)
+      labelLedConnected->setPixmap(QPixmap(QString(resourcePath) + "/pixmap/led-yellow-on.gif"));
+   else
+      labelLedConnected->setPixmap(QPixmap(QString(resourcePath) + "/pixmap/led-green-off.gif"));
+
+   int powerOn = thread->isOpen() || testMode;
+   setSlotPower(psAll, powerOn);
+   switchOutputs(isNoPowerInd, !powerOn);
 
    updateDriverImage(labelImageSlot1->width(), labelImageSlot1->height());
+   pushButtonStartRace->setEnabled(thread->isOpen() || testMode);
+   pushButtonPower->setEnabled(thread->isOpen() || testMode);
+   pushButtonSaveToDb->setEnabled(no);
+   toolButtonRecordGhostCar->setEnabled(no);
 }
 
 //***************************************************************************
@@ -546,6 +568,8 @@ void LinslotWindow::switchOutputs(int mask, int state)
 
 void LinslotWindow::writeBit(int function, int state)
 {
+   tell(eloDebug, "Debug: Write bit %d of function %d to %d", outputBitOf(function), function, state);
+
    outputFunctionState[function] = state;
    thread->writeBit(outputBitOf(function), state);
    setLed(function, state);
@@ -603,9 +627,8 @@ void LinslotWindow::setSlotPower(int slot, int flag)
       writeBit(bitPowerSlot2, flag);
 
    if (slot & psSlot1 && slot & psSlot2)
-      pushButtonPower->setIcon(QIcon(QString(resourcePath) +
-                                     (flag ? "pixmap/led-blue-on.gif" :
-                                      "pixmap/led-blue-off.gif")));
+      pushButtonPower->setIcon(QIcon(QString(resourcePath)
+                                     + (flag ? "pixmap/led-blue-on.gif" : "pixmap/led-blue-off.gif")));
 }
 
 //***************************************************************************
@@ -628,9 +651,12 @@ void LinslotWindow::onOptionsAccepted()
       QMessageBox::information(0, "Adruino", "Nach ändern der SPI Einstellung muss der "
                                "Arduino neu gestartet werden!");
 
-   applyOptions();
+   tell(eloAlways, "Reconnect to apply option to arduino");
 
-   thread->changeDevice(setupDialog->getUsbDevice());
+   thread->close();
+   applyOptions();
+   thread->setDevice(setupDialog->getUsbDevice());
+   thread->open();
 }
 
 void LinslotWindow::applyOptions()
@@ -730,17 +756,6 @@ void LinslotWindow::applyOptions()
                      labelImageSlot1->height());
 
    resetWidgets();
-
-   // transfer changes to arduino
-
-   if (thread->isOpen())
-   {
-      tell(eloDebug2, "Write 0x%d for spi extension", setupDialog->getWithSpiExtension());
-
-      thread->initIoSetup(setupDialog->getInputMask(),
-                          setupDialog->getOutputMask(),
-                          setupDialog->getWithSpiExtension());
-   }
 }
 
 //***************************************************************************
@@ -971,8 +986,6 @@ void LinslotWindow::onDigitalInput(const DigitalEvent ioEvent)
    DigitalEvent theEvent = ioEvent;
    unsigned int value;
 
-   // entprellen
-
    if (!(value = getChanges(theEvent)))
       return ;
 
@@ -1079,6 +1092,7 @@ void LinslotWindow::on_pushButtonHallOfFame_clicked()
 void LinslotWindow::on_pushButtonSaveToDb_clicked()
 {
    saveRace();
+   pushButtonSaveToDb->setEnabled(no);
 }
 
 //***************************************************************************
@@ -1135,7 +1149,7 @@ void LinslotWindow::initRace()
 
    radioButtonTraining->setEnabled(radioButtonTraining->isChecked());
    radioButtonLapRace->setEnabled(radioButtonLapRace->isChecked());
-   pushButtonOptions->setEnabled(false);
+   pushButtonOptions->setEnabled(no);
 
    resetWidgets();
    pushButtonStartRace->setText("&Abbrechen");
@@ -1222,6 +1236,8 @@ void LinslotWindow::atFinish(int slot)
 
    for (int i = 0; i < slotCount; i++)
       tell(eloDebug, "Bahn %d - %d Runden gefahren", i+1, theSlots[i].lap);
+
+   pushButtonSaveToDb->setEnabled(yes);
 }
 
 //***************************************************************************
@@ -1233,7 +1249,7 @@ void LinslotWindow::atAbort(const char* info)
    atStop(info);
    labelElapsed->setText("0.0");
 
-   playSound(sfRaceAborted);
+   // playSound(sfRaceAborted);
 }
 
 //***************************************************************************
@@ -1273,16 +1289,16 @@ void LinslotWindow::atStop(const char* info)
 
    labelInfo->setText(info);
 
-   radioButtonTraining->setEnabled(true);
-   radioButtonLapRace->setEnabled(true);
-   pushButtonOptions->setEnabled(true);
+   radioButtonTraining->setEnabled(yes);
+   radioButtonLapRace->setEnabled(yes);
+   pushButtonOptions->setEnabled(yes);
 }
 
 //***************************************************************************
 // At Jump The Gun
 //***************************************************************************
 
-void LinslotWindow::atJumpTheGun(int slot)
+void LinslotWindow::atJumpStart(int slot)
 {
    char info[100];
 
@@ -1296,7 +1312,7 @@ void LinslotWindow::atJumpTheGun(int slot)
       playSound(sfJumpTheGun);
       theSlots[slot].labelInfo->setText("Frühstart");
 
-      tell(eloAlways, "Jump the gun on slot %d, time penalty of (%d) seconds",
+      tell(eloAlways, "Jump start on slot %d, time penalty of (%d) seconds",
            slot+1, setupDialog->getPenaltyAtJumpTheGun());
 
       setPenalty(slot);
@@ -1353,7 +1369,7 @@ int LinslotWindow::outputBitOf(int function)
 }
 
 //***************************************************************************
-// Bounce Check  (entprellen)
+// Bounce Check (entprellen)
 //***************************************************************************
 
 unsigned int LinslotWindow::getChanges(DigitalEvent& ioEvent)
@@ -1362,16 +1378,14 @@ unsigned int LinslotWindow::getChanges(DigitalEvent& ioEvent)
    static timeval lastInputTimes[4*bitsPerByte] = { { 0, 0 } };
    static unsigned int lastValue = 0xFFFFFFFF;
 
-   unsigned int mask, b, state, fctMask;
-   int i;
-
    // init
 
    if (!initialized)
    {
       initialized = yes;
+      lastValue = 0xFFFFFFFF;
 
-      for (i = 0; i < 4*bitsPerByte; i++)
+      for (int i = 0; i < 4*bitsPerByte; i++)
       {
          gettimeofday(&lastInputTimes[i], 0);
          lastInputTimes[i].tv_sec -= 10;
@@ -1380,6 +1394,7 @@ unsigned int LinslotWindow::getChanges(DigitalEvent& ioEvent)
 
    // detect changes
 
+   unsigned int mask, b, state, fctMask;
    unsigned int changedFunctions = 0;
 
    for (int bit = 0; bit < 4*bitsPerByte; bit++)
@@ -1403,8 +1418,7 @@ unsigned int LinslotWindow::getChanges(DigitalEvent& ioEvent)
             {
                if (isActiveEdge(fct, state))
                {
-                  tell(eloAlways, "Function '%s' (%d), bit (%d) detected",
-                       inputFunctionName(fct), fct, bit);
+                  tell(eloDebug, "Debug: Function '%s' (%d), bit (%d) detected", inputFunctionName(fct), fct, bit);
                   changedFunctions |= fctMask;
                   lastInputTimes[bit] = ioEvent.tp;
                }
@@ -1552,10 +1566,10 @@ void LinslotWindow::atSlotSignal(int slot, const timeval* tp)
 
    tell(eloDebug, "Debug: Signal slot %d", slot);
 
-   if (slot == 0 && !thread->readOutBit(outputBitOf(bitPowerSlot1)))
+   if (slot == 0 && !thread->readOutBit(outputBitOf(bitPowerSlot1)) && !testMode)
       return;
 
-   if (slot == 1 && !thread->readOutBit(outputBitOf(bitPowerSlot2)))
+   if (slot == 1 && !thread->readOutBit(outputBitOf(bitPowerSlot2)) && !testMode)
       return;
 
    // recording ghostcar
@@ -1595,11 +1609,11 @@ void LinslotWindow::atSlotSignal(int slot, const timeval* tp)
 
    theSlots[slot].lap++;
 
-   // check 'jump the gun' (Fruehstart)
+   // check 'jump start'
 
    if (!raceRunning)
    {
-      atJumpTheGun(slot);
+      atJumpStart(slot);
       return ;
    }
 
@@ -2257,7 +2271,7 @@ void LinslotWindow::storeGcRecording(QList<unsigned short>* values)
       }
    }
 
-   applyOptions();
+   // applyOptions();
 
    delete insert;
 }
@@ -2403,7 +2417,7 @@ void LinslotWindow::on_toolButtonTest_clicked()
 
    // profileDialog->setAnimated(false);
    profileDialog->exec();
-   applyOptions();
+   // applyOptions();
 
    delete profileDialog;
 }

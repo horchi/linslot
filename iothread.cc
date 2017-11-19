@@ -85,30 +85,12 @@ void IoThread::setDevice(const char* dev)
 }
 
 //***************************************************************************
-// Set Device
-//***************************************************************************
-
-void IoThread::changeDevice(const char* dev)
-{
-   if (!dev)
-      return ;
-
-   if (strcmp(device, dev) != 0)
-   {
-      setDevice(dev);
-
-      close();
-      open();
-   }
-}
-
-//***************************************************************************
 // Exit
 //***************************************************************************
 
 int IoThread::exit()
 {
-   // Close device
+   // close device ion exit
 
    close();
 
@@ -126,11 +108,7 @@ int IoThread::open()
    if (ioDevice->open(device) != success)
       return fail;
 
-   ioDevice->flush();
-   ioDevice->setWriteTimeout(1000);
-   ioDevice->setTimeout(1000);
-
-   emit onDeviceConnected();
+   emit onDeviceConnected(yes);
 
    return success;
 }
@@ -141,9 +119,12 @@ int IoThread::open()
 
 int IoThread::close()
 {
+   if (isOpen())
+      emit onDeviceConnected(no);
+
    ioDevice->close();
 
-   return 0;
+   return success;
 }
 
 void IoThread::stopGhostCar()
@@ -210,8 +191,8 @@ void IoThread::onReplayTimer()
    byte volt = gcValues.at(gcValueIndex).volt;
    byte ampere = gcValues.at(gcValueIndex).ampere;
 
-   // bei halten des Wetes am Ende der Liste
-   // konservativ regeln
+   // bei halten des Wertes am Ende der Liste
+   //  ... konservativ regeln
 
    if (gcValueIndex == gcValues.size()-1)
    {
@@ -264,32 +245,30 @@ int IoThread::checkAndOpenConnetion()
    if (testMode)
       return success;
 
+   if (ioDevice->isOpen() && !ioDevice->connected())
+   {
+      tell(eloAlways, "Connection broken, closing line");
+      close();
+   }
+
    if (!ioDevice->isOpen() && time(0) >= lastTry + retryEvery)
    {
       int state = open();
 
-      if (state != success)
-         tell(eloAlways, "Retrying to open in %d seconds", retryEvery);
+      lastTry = 0;
 
-      lastTry = time(0);
+      if (state != success)
+      {
+         lastTry = time(0);
+         tell(eloAlways, "Retrying to open in %d seconds", retryEvery);
+      }
    }
 
    return ioDevice->isOpen() ? success : fail;
 }
 
 //***************************************************************************
-// Look IO
-//***************************************************************************
-
-int IoThread::lookIo()
-{
-   // needed ... ?
-
-   return done;
-}
-
-//***************************************************************************
-// Control
+// Get Message
 //***************************************************************************
 
 byte* IoThread::getMessage()
@@ -310,6 +289,11 @@ void IoThread::control()
 
    switch (command)
    {
+      case cBoardTime:
+      {
+         tell(eloAlways, "Fatal: Got unexpected command 'cBoardTime'");
+         break;
+      }
       case cDigitalIn:
       {
          DigitalEvent event;
@@ -376,13 +360,11 @@ void IoThread::control()
 
 void IoThread::run()
 {
-   int status;
-
    running = yes;
 
    // loop
 
-   tell(eloDebug, "IO thread started");
+   tell(eloAlways, "IO thread started");
 
    while (running)
    {
@@ -392,11 +374,17 @@ void IoThread::run()
          continue ;
       }
 
-      if ((status = ioDevice->look(command)) == success)
+      if (!active)
+      {
+         usleep(100000);
+         continue;
+      }
+
+      if (ioDevice->look(command) == success)
          control();
       else
          usleep(100);
    }
 
-   tell(eloDebug, "IO thread ennded");
+   tell(eloAlways, "IO thread ended");
 }

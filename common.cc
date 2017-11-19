@@ -64,7 +64,7 @@ int tell(int eloquence, const char* format, ...)
       strftime(buf, sizeDateTime+1, "%y.%m.%d %H:%M:%S", localtime(&now));
 
       sprintf(buf+sizeDateTime, ",%3.3ld", tp.tv_usec / 1000);
-      
+
       buf[sizeHeader-1] = ' ';
 
       if (logFile.size())
@@ -74,7 +74,7 @@ int tell(int eloquence, const char* format, ...)
    }
 
    va_end(ap);
-   
+
    return 0;
 }
 
@@ -122,7 +122,7 @@ void checkSound()
 #else
    withSound = QAlsaSound::isAvailable();
 #endif
-   
+
    if (!withSound)
       tell(eloAlways, "No sound available");
 }
@@ -132,8 +132,8 @@ void checkSound()
 //***************************************************************************
 
 const char* notNull(const char* s)
-{ 
-   return s ? s : ""; 
+{
+   return s ? s : "";
 }
 
 //***************************************************************************
@@ -188,8 +188,8 @@ const char* SlotService::toBinStr(unsigned int value, char* mask, int bits)
          mask[bits+bytes-i-2] = ':';
          i++;
       }
-      
-      mask[bits+bytes-i-2] = (value & bit) ? '1' : '0';     
+
+      mask[bits+bytes-i-2] = (value & bit) ? '1' : '0';
       bit = bit << 1;
    }
 
@@ -204,7 +204,7 @@ const char* SlotService::toBinStr(unsigned int value, char* mask, int bits)
 
 double SlotService::kmh(double meter, double usec)
 {
-   return ((double)meter/1000L)  /  
+   return ((double)meter/1000L)  /
       ((double)usec / 1000000L / 60L / 60L);
 }
 
@@ -300,20 +300,20 @@ const char* SlotService::toStr(int value)
 //***************************************************************************
 
 SlotService::InputDefinition SlotService::inputBits[] =
-{ 
+{
    // bit, mode,              function
 
    {   4, teFalling  },   //  StartKey
 
-   {  16, teRising   },   //  PanicKey1 
-   {  17, teRising   },   //  PanicKey2  
-   {  18, teRising   },   //  PanicKey3 
-   {  19, teRising   },   //  PanicKey4 
+   {  16, teRising   },   //  PanicKey1
+   {  17, teRising   },   //  PanicKey2
+   {  18, teRising   },   //  PanicKey3
+   {  19, teRising   },   //  PanicKey4
 
    {  20, teFalling  },   //  IrSlot1
    {  21, teFalling  },   //  IrSlot2
-   {  22, teFalling  },   //  IrSlot3   
-   {  23, teFalling  },   //  IrSlot4   
+   {  22, teFalling  },   //  IrSlot3
+   {  23, teFalling  },   //  IrSlot4
 
    {  24, teFalling  },   //  FuelStartSlot1
    {  25, teFalling  },   //  FuelStartSlot2
@@ -329,22 +329,22 @@ SlotService::InputDefinition SlotService::inputBits[] =
 const char* SlotService::inputFunctions[] =
 {
    "Start Key",
-            
+
    "Panic Key 1",
    "Panic Key 2",
    "Panic Key 3",
    "Panic Key 4",
-    
+
    "Signal Slot 1",
    "Signal Slot 2",
    "Signal Slot 3",
    "Signal Slot 4",
-   
+
    "Fuel Start Slot 1",
    "Fuel Start Slot 2",
    "Fuel Start Slot 3",
    "Fuel Start Slot 4",
-   
+
    "Fuel End Slot 1",
    "Fuel End Slot 2",
    "Fuel End Slot 3",
@@ -355,7 +355,7 @@ const char* SlotService::inputFunctionName(int fct)
 {
    if (fct < 0 || fct > bitInputCount)
       return "<unknown>";
-   
+
    return inputFunctions[fct];
 }
 
@@ -372,12 +372,12 @@ SlotService::OutputDefinition SlotService::outputBits[] =
    {  18, omNormal,        ledRed3     },    //  Red Phase 3
    {  19, omNormal,        ledRed4     },    //  Red Phase 4
    {  20, omNormal,        ledRed5     },    //  Red Phase 5
-   {  21, omNormal,        ledGreen    },    //  Green    
+   {  21, omNormal,        ledGreen    },    //  Green
 
-   {  16, omNormal,        ledRed1     },    //  Indicator Power Slot 1
-   {  17, omNormal,        ledRed2     },    //  Indicator Power Slot 2
-   {  19, omNormal,        ledRed4     },    //  Indicator Power Slot 3
-   {  20, omNormal,        ledRed5     },    //  Indicator Power Slot 4
+   {  16, omNormal,        ledYellow1  },    //  Indicator Power Slot 1
+   {  17, omNormal,        ledYellow2  },    //  Indicator Power Slot 2
+   {  19, omNormal,        ledYellow3  },    //  Indicator Power Slot 3
+   {  20, omNormal,        ledYellow4  },    //  Indicator Power Slot 4
 
    {  28, omNormal,        ledNone     },    //  Power Slot 1
    {  29, omNormal,        ledNone     },    //  Power Slot 2
@@ -403,21 +403,21 @@ const char* SlotService::outputFunctions[] =
 {
    "Red Phase 1",
    "Red Phase 2",
-   "Red Phase 3",  
-   "Red Phase 4",  
-   "Red Phase 5", 
-   "Green", 
-   
+   "Red Phase 3",
+   "Red Phase 4",
+   "Red Phase 5",
+   "Green",
+
    "Indicator Power Slot 1   *(1)",
    "Indicator Power Slot 1   *(2)",
    "Indicator Power Slot 2   *(3)",
    "Indicator Power Slot 2   *(4)",
-   
+
    "Power Slot 1",
    "Power Slot 2",
    "Power Slot 3",
    "Power Slot 4",
-   
+
    "PWM Slot 1",
    "PWM Slot 3",
 
@@ -437,7 +437,7 @@ const char* SlotService::outputFunctionName(int fct)
 {
    if (fct < 0 || fct > fctOutputCount)
       return "<unknown>";
-   
+
    return outputFunctions[fct];
 }
 
@@ -464,14 +464,14 @@ const char* SlotService::analogInFunctions[] =
    "Strom Slot 1",
    "Strom Slot 3",
    "Frei 1",
-   "Frei 2"           
+   "Frei 2"
 };
 
 const char* SlotService::analogInFunctionName(int fct)
 {
    if (fct < 0 || fct > fctAnalogCount)
       return "<unknown>";
-   
+
    return analogInFunctions[fct];
 }
 
@@ -550,7 +550,7 @@ const char* SlotService::toName(OutputMode mode)
 {
    if (mode < 0 || mode > omCount)
       return "<unknown>";
-   
+
    return outputModes[mode];
 }
 
@@ -564,24 +564,24 @@ SlotService::OutputMode SlotService::toOutputMode(const char* name)
 }
 
 //***************************************************************************
-// 
+//
 //***************************************************************************
 //***************************************************************************
 // gettimeofday() for WINDOWS
 //***************************************************************************
 
 #ifdef Q_OS_WIN32
- 
+
 unsigned int usleep(unsigned int usec)
-{ 
+{
    Sleep(usec/1000);
-   return 0; 
+   return 0;
 }
 
 unsigned int sleep(unsigned int sec)
-{ 
-   Sleep(sec*1000); 
-   return 0; 
+{
+   Sleep(sec*1000);
+   return 0;
 }
 
 #if defined(_MSC_VER) || defined(_MSC_EXTENSIONS)
@@ -589,8 +589,8 @@ unsigned int sleep(unsigned int sec)
 #else
   #define DELTA_EPOCH_IN_MICROSECS  11644473600000000ULL
 #endif
- 
-struct timezone 
+
+struct timezone
 {
   int tz_minuteswest; /* minutes W of Greenwich */
   int tz_dsttime;     /* type of dst correction */
@@ -601,22 +601,22 @@ int gettimeofday(struct timeval *tv, struct timezone *tz)
    FILETIME ft;
    unsigned __int64 tmpres = 0;
    static int tzflag;
- 
+
    if (tv)
    {
       GetSystemTimeAsFileTime(&ft);
- 
+
       tmpres |= ft.dwHighDateTime;
       tmpres <<= 32;
       tmpres |= ft.dwLowDateTime;
- 
+
       /*converting file time to unix epoch*/
       tmpres /= 10;  /*convert into microseconds*/
-      tmpres -= DELTA_EPOCH_IN_MICROSECS; 
+      tmpres -= DELTA_EPOCH_IN_MICROSECS;
       tv->tv_sec = (long)(tmpres / 1000000UL);
       tv->tv_usec = (long)(tmpres % 1000000UL);
    }
- 
+
    if (tz)
    {
       if (!tzflag)
@@ -627,7 +627,7 @@ int gettimeofday(struct timeval *tv, struct timezone *tz)
       tz->tz_minuteswest = _timezone / 60;
       tz->tz_dsttime = _daylight;
    }
- 
+
    return 0;
 }
 

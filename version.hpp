@@ -2,13 +2,15 @@
 #ifndef _VERSION_
 #define _VERSION_
 
-#define BUILD "0.1.0"
+#define BUILD "0.1.1"
 
 /*
   ---------------------------------------------------------------------
   Version - History
   ---------------------------------------------------------------------
 
+  #4     0.1.1    19.11.17,  Minor fixed
+                             More consitent gui interaction
   #3     0.1.0    17.11.17,  Code improvements
                              Removed id warrior code
                              Improved i/o reconnect handling

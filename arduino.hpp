@@ -48,6 +48,7 @@ class Arduino : public IoInterface, public SlotService
       virtual int close();
       virtual int reopen(const char* dev = 0);
       virtual int isOpen()              { return fdDevice != 0 && opened; }
+      virtual int connected();
       virtual int flush();
       virtual int look(byte& command);
       virtual byte* getMessage()        { if (*message) return message; return 0; };
@@ -60,7 +61,7 @@ class Arduino : public IoInterface, public SlotService
       virtual void stopGhostCar();
       virtual void writeGhostCarValue(byte volt, byte ampere);
       virtual void flushGhostCar();
-      virtual void initIoSetup(word bitsInput, word bitsOutput, byte withSpi);
+      virtual int initIoSetup(word bitsInput, word bitsOutput, byte withSpi);
 
       // read / write
 
@@ -78,7 +79,7 @@ class Arduino : public IoInterface, public SlotService
 
    protected:
 
-      virtual int receiveCommand();
+      virtual byte receiveCommand();
       virtual int _look();
       int initBoardTime();
       int read(void* buf, unsigned int count);

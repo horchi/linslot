@@ -1,4 +1,7 @@
 
+# if [ "$1" != "" ] ; then
+#fi
+
 qmake
 make -s
 

@@ -26,10 +26,10 @@ class IoService
 
       enum Command
       {
-         cNone = na,
+         cNone = 0,
 
          // from PC
-         
+
          cGetTime            = 0x01,
          cDigitalOut         = 0x02,
          cDigitalOutBit      = 0x03,
@@ -41,10 +41,10 @@ class IoService
          cGhostCarValue      = 0x09,
          cSetupIo            = 0x0A,
          cGhostCarFlush      = 0x0B,
-         
+
          // to PC
 
-         cGhostCarBufferFull = 0x0E,         
+         cGhostCarBufferFull = 0x0E,
          cDigitalIn          = 0x0F,
          cAnalogIn           = 0x10,
          cBoardTime          = 0x11,

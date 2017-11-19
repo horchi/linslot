@@ -16,6 +16,7 @@
 #  include <unistd.h>
 #endif
 
+#include <sys/ioctl.h>
 #include <fcntl.h>
 #include <string.h>
 #include <stdlib.h>
@@ -67,13 +68,31 @@ int Arduino::setWriteTimeout(unsigned int timeout)
 }
 
 //***************************************************************************
+// Is Connected
+//***************************************************************************
+
+int Arduino::connected()
+{
+   int stat;
+
+   if (ioctl(fdDevice, TIOCMGET, &stat) != 0)
+   {
+      // tell(eloAlways, "Warning: ioctl failed due to '%m'");
+      return no;
+   }
+
+   if (stat & TIOCM_CD)
+      return no;
+
+   return yes;
+}
+
+//***************************************************************************
 // Open Device
 //***************************************************************************
 
 int Arduino::open(const char* dev)
 {
-   int state;
-
 #ifndef Q_OS_WIN32
    struct termios newtio;
 #endif
@@ -141,8 +160,6 @@ int Arduino::open(const char* dev)
       return fail;
    }
 
-   tell(eloAlways, "Serial port opened successfully, handle is (%d)", fdDevice);
-
    config.dwSize = confSize;
 
    GetCommConfig(fdDevice, &config, &confSize);
@@ -178,8 +195,7 @@ int Arduino::open(const char* dev)
    // Setting 0 indicates that timeouts are not used
    // for read nor write operations;
    // however read() and write() functions will
-   // still block. Set -1 to provide
-   // non-blocking behaviour (read() and write()
+   // still block. Set -1 to provide   // non-blocking behaviour (read() and write()
    // will return immediately).
 
    timeouts.ReadIntervalTimeout = 5;
@@ -196,18 +212,11 @@ int Arduino::open(const char* dev)
 #endif
 
    deviceMutex.unlock();
-
-   flush();
-
-   // first ask about the boardtime
-
-   state = initBoardTime();
-   recordGhostCar(na, na);    // switch off ghostcar recording
-
-   tell(eloAlways, "Initializing io device %s",
-        state == success ? "succeeded" : "failed");
+   setWriteTimeout(1000);
+   setTimeout(1000);
 
    opened = yes;
+   tell(eloAlways, "Serial port opened successfully, handle is (%d)", fdDevice);
 
    return success;
 }
@@ -281,50 +290,22 @@ int Arduino::flush()
 }
 
 //***************************************************************************
-// Init Board Time
-//***************************************************************************
-
-int Arduino::initBoardTime()
-{
-   byte command = cNone;
-   int tries = 0, cnt = 0;
-
-   // ask about the boardtime
-
-   tell(eloDebug, "Debug: Try to get the board time");
-
-   while (command != cBoardTime && cnt < 5)
-   {
-      if (!(tries % 50))
-      {
-         cnt++;
-         sendCommand(cGetTime);
-      }
-
-      usleep(1000);
-      look(command);
-      tries++;
-   }
-
-   if (command == cBoardTime)
-      tell(eloAlways, "Board time initialized after (%d) tries!", cnt);
-   else
-      tell(eloAlways, "Board time failed!");
-
-   return command == cBoardTime ? success : fail;
-}
-
-//***************************************************************************
 // Setup Io
 //***************************************************************************
 
-void Arduino::initIoSetup(word bitsInput, word bitsOutput, byte withSpi)
+int Arduino::initIoSetup(word bitsInput, word bitsOutput, byte withSpi)
 {
-   static int initial = yes;
    char buf[50];
    char buf1[50];
-
    SetupIo sio;
+   int state;
+
+   flush();
+
+   if ((state = initBoardTime()) != success)
+      tell(eloAlways, "Initializing bord time failed!");
+
+   recordGhostCar(na, na);                     // switch off ghostcar recording
 
    sio.bitsInput = bitsInput;
    sio.bitsOutput = bitsOutput;
@@ -336,13 +317,63 @@ void Arduino::initIoSetup(word bitsInput, word bitsOutput, byte withSpi)
         toBinStr(sio.bitsInput, buf, 16),
         toBinStr(sio.bitsOutput, buf1, 16));
 
-   // get actual input state
+   sendCommand(cGetInputs);
 
-   if (initial)
+   tell(eloAlways, "Initializing io device %s", state == success ? "succeeded" : "failed");
+
+   return state;
+}
+
+//***************************************************************************
+// Init Board Time
+//***************************************************************************
+
+int Arduino::initBoardTime()
+{
+   byte command = cNone;
+   int cnt = 0;
+
+   // ask about the boardtime
+
+   tell(eloAlways, "Requesting actual board time");
+
+   while (command != cBoardTime && cnt < 5)
    {
-      initial = no;
-      sendCommand(cGetInputs);
+      sendCommand(cGetTime);
+      usleep(10000);
+
+      time_t timeoutAt = time(0) + 3;
+
+      while (look(command) != success)
+      {
+         if (time(0) > timeoutAt)
+            break;
+
+         usleep(10000);
+      }
+
+      if (command == cBoardTime)
+      {
+         unsigned int boardTime;
+         DigitalInput* boardTm;
+         boardTm = (DigitalInput*)message;
+
+         tell(eloAlways, "<- BoardTime: (%ums)", boardTm->time);
+
+         boardTime = boardTm->time;
+         tvNow(&tvBoardStartTime);
+         tvBoardStartTime = subMs2Tv(tvBoardStartTime, boardTime);
+      }
+
+      else if (command != cNone)
+      {
+         tell(eloDebug, "Debug: Got unexpected command %d, ignoring", command);
+      }
+
+      cnt++;
    }
+
+   return command == cBoardTime ? success : fail;
 }
 
 //***************************************************************************
@@ -478,7 +509,7 @@ void Arduino::flushGhostCar()
 
 int Arduino::look(byte& command)
 {
-   int cmd;
+   byte cmd = cNone;
 
    *message = 0;
    messageSize = 0;
@@ -488,39 +519,14 @@ int Arduino::look(byte& command)
       return fail;
 
    if (_look() != success)
-   {
-      // no input data pending
-
-      return fail;
-   }
+      return ignore;           // no input data pending
 
    tell(eloDebug2, "Debug: look() succeeded, reading command");
 
-   if ((cmd = receiveCommand()) == fail)
-   {
-      tell(eloAlways, "Error: receiveCommand() failed");
+   if ((cmd = receiveCommand()) == cNone)
       return fail;
-   }
 
    command = cmd;
-
-   if (command == cBoardTime)
-   {
-      unsigned int boardTime;
-      DigitalInput* boardTm;
-      boardTm = (DigitalInput*)message;
-
-      tell(eloAlways, "<- BoardTime: (%ums)", boardTm->time);
-
-      boardTime = boardTm->time;
-      tvNow(&tvBoardStartTime);
-      tvBoardStartTime = subMs2Tv(tvBoardStartTime, boardTime);
-
-      *message = 0;
-      messageSize = 0;
-
-      return fail;
-   }
 
    return success;
 }
@@ -600,8 +606,6 @@ int Arduino::read(void* buf, unsigned int count)
    return readCount;
 
 #endif
-
-   return 0;
 }
 
 //***************************************************************************
@@ -632,7 +636,7 @@ int Arduino::_look()
 // Read Command
 //***************************************************************************
 
-int Arduino::receiveCommand()
+byte Arduino::receiveCommand()
 {
    int count = 0;
    int res;
@@ -646,7 +650,7 @@ int Arduino::receiveCommand()
       if (res < 0)
       {
          tell(eloAlways, "Error: read failed!");
-         return fail;
+         return cNone;
       }
 
       usleep(100);

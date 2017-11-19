@@ -31,6 +31,7 @@ class IoInterface : public IoService
       virtual int close() = 0;
       virtual int reopen(const char* dev = 0) = 0;
       virtual int isOpen() = 0;
+      virtual int connected() = 0;
       virtual int flush() = 0;
       virtual int getGcScale()  { return gcScale100; }
       virtual byte* getMessage() = 0;
@@ -43,8 +44,8 @@ class IoInterface : public IoService
       virtual void stopGhostCar() {}
       virtual void writeGhostCarValue(byte /*volt*/, byte /*ampere*/) {}
       virtual void flushGhostCar() {}
-      virtual void initIoSetup(word /*bitsInput*/, word /*bitsOutput*/, 
-                               byte /*withSpi*/) {}
+      virtual int initIoSetup(word /*bitsInput*/, word /*bitsOutput*/,
+                              byte /*withSpi*/) { return done; }
 
       // read/write
 

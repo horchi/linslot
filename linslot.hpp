@@ -163,7 +163,7 @@ class LinslotWindow : public QMainWindow, private Ui::LinslotWindow, public Slot
       void atStartTraining();
       void atFinish(int slot);
       void atAbort(const char* info);
-      void atJumpTheGun(int slot);
+      void atJumpStart(int slot);
       void atNoFuel(int slot);
       void atStop(const char* info);
 
@@ -177,7 +177,7 @@ class LinslotWindow : public QMainWindow, private Ui::LinslotWindow, public Slot
       void setSlotPower();
       void clearSlotPower();
 
-      unsigned int getChanges(DigitalEvent &ioEvent);
+   unsigned int getChanges(DigitalEvent &ioEvent);
       int isActiveEdge(int bit, int value);
       int inputBitOf(int function);
       int functionOfInput(int bit);
@@ -245,7 +245,7 @@ class LinslotWindow : public QMainWindow, private Ui::LinslotWindow, public Slot
 
       void onDigitalInput(const DigitalEvent ioEvent);
       void onAnalogInput(const AnalogEvent ioEvent);
-      void onDeviceConnected();
+      void onDeviceConnected(int state);
 
       void on_pushButtonPower_clicked();
       void on_pushButtonSaveToDb_clicked();

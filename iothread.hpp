@@ -47,11 +47,11 @@ class IoThread : public QThread, public SlotService, public IoService
       int writeBit(int bit, int value)  { return ioDevice->writeBit(bit, value); }
       int readOutBit(int bit)           { return ioDevice->readOutBit(bit); }
       int isOpen()                      { return ioDevice->isOpen(); }
-      void changeDevice(const char* dev);
+      int flush()                       { return ioDevice->flush(); }
       int waitIo();
-      int lookIo();
       void control();
-      void activate() { active = yes; }
+      void activate()   { active = yes; }
+      void deactivate() { active = no; }
       byte* getMessage();
 
       int getGcScale()                  { return ioDevice->getGcScale(); }
@@ -71,7 +71,7 @@ class IoThread : public QThread, public SlotService, public IoService
 
       void onDigitalInput(const DigitalEvent &ioEvent);
       void onAnalogInput(const AnalogEvent &ioEvent);
-      void onDeviceConnected();
+      void onDeviceConnected(int state);
 
    private slots:
 
