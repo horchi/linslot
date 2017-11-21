@@ -365,7 +365,7 @@ const char* SlotService::inputFunctionName(int fct)
 
 SlotService::OutputDefinition SlotService::outputBits[] =
 {
-   // bit, mode,                function
+   // bit, mode,           function
 
    {  16, omNormal,        ledRed1     },    //  Red Phase 1
    {  17, omNormal,        ledRed2     },    //  Red Phase 2
@@ -374,10 +374,10 @@ SlotService::OutputDefinition SlotService::outputBits[] =
    {  20, omNormal,        ledRed5     },    //  Red Phase 5
    {  21, omNormal,        ledGreen    },    //  Green
 
-   {  16, omNormal,        ledYellow1  },    //  Indicator Power Slot 1
-   {  17, omNormal,        ledYellow2  },    //  Indicator Power Slot 2
-   {  19, omNormal,        ledYellow3  },    //  Indicator Power Slot 3
-   {  20, omNormal,        ledYellow4  },    //  Indicator Power Slot 4
+   {  24, omNormal,        ledYellow1  },    //  Indicator Power Slot 1
+   {  25, omNormal,        ledYellow2  },    //  Indicator Power Slot 2
+   {  26, omNormal,        ledYellow3  },    //  Indicator Power Slot 3
+   {  27, omNormal,        ledYellow4  },    //  Indicator Power Slot 4
 
    {  28, omNormal,        ledNone     },    //  Power Slot 1
    {  29, omNormal,        ledNone     },    //  Power Slot 2
@@ -564,10 +564,10 @@ SlotService::OutputMode SlotService::toOutputMode(const char* name)
 }
 
 //***************************************************************************
-//
+// Windows
 //***************************************************************************
 //***************************************************************************
-// gettimeofday() for WINDOWS
+// usleep / sleep
 //***************************************************************************
 
 #ifdef Q_OS_WIN32
@@ -596,7 +596,11 @@ struct timezone
   int tz_dsttime;     /* type of dst correction */
 };
 
-int gettimeofday(struct timeval *tv, struct timezone *tz)
+//***************************************************************************
+// gettimeofday
+//***************************************************************************
+
+int gettimeofday(struct timeval* tv, struct timezone* tz)
 {
    FILETIME ft;
    unsigned __int64 tmpres = 0;
@@ -631,4 +635,4 @@ int gettimeofday(struct timeval *tv, struct timezone *tz)
    return 0;
 }
 
-#endif
+#endif // Q_OS_WIN32

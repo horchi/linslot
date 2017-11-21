@@ -27,7 +27,7 @@
 #  include <winsock.h>
 
    int gettimeofday(struct timeval *tv, struct timezone *tz);
- 
+
    unsigned int usleep(unsigned int usec);
    unsigned int sleep(unsigned int sec);
 
@@ -185,7 +185,7 @@ class SlotService
          ledYellow3 = 256,
          ledYellow4 = 512,
 
-         ledCount = 11 
+         ledCount = 11
       };
 
       // HW parameters
@@ -278,13 +278,13 @@ class SlotService
 
       static const char* toBinStr(unsigned int value, char* mask, int bits = 32);
 
-      // misc 
+      // misc
 
       static double kmh(double meter, double usec);
       static const char* toStr(int value);
-      
+
       // time stuff
-      
+
       static void tvNull(timeval* tv);
       static timeval* tvNow(timeval* tv);
       static timeval addMs2Tv(timeval tv, unsigned long milli);
