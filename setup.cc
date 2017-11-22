@@ -53,12 +53,12 @@ SetupDialog::SetupDialog(QString configPath)
    maxTimeTraining = settings->value("maxTimeTraining", 0).toInt();
    speedFactor = settings->value("speedFactor", 1).toInt();
    abortAtJumpTheGun = settings->value("abortAtJumpTheGun", 0).toInt();
-   strncpy(tmpDevice, settings->value("usbDevice", "/dev/ttyUSB0").toString().toAscii(), 100);
+   strncpy(tmpDevice, settings->value("usbDevice", "/dev/ttyUSB0").toString().toLatin1(), 100);
    tmpDevice[100] = 0;
-   strcpy(alsaDevice, settings->value("alsaDevice", "default").toString().toAscii());
-   strcpy(courseName, settings->value("course", "Heimstrecke").toString().toAscii());
-   strcpy(databaseName, settings->value("databaseName", "linslot.db").toString().toAscii());
-   strcpy(resourcePath, settings->value("resourcePath", "/usr/local/share/linslot/").toString().toAscii());
+   strcpy(alsaDevice, settings->value("alsaDevice", "default").toString().toLatin1());
+   strcpy(courseName, settings->value("course", "Heimstrecke").toString().toLatin1());
+   strcpy(databaseName, settings->value("databaseName", "linslot.db").toString().toLatin1());
+   strcpy(resourcePath, settings->value("resourcePath", "/usr/local/share/linslot/").toString().toLatin1());
    penaltyAtJumpTheGun = settings->value("penaltyAtJumpTheGun", 5).toInt();
    fuelMax = settings->value("fuelMax", 75.0).toDouble();
    fuelPerLap = settings->value("fuelPerLap", 9.5).toDouble();
@@ -290,9 +290,14 @@ SetupDialog::SetupDialog(QString configPath)
    labels << "Funktion" << "Bit" << "Trigger-Flanke";
 
    tableWidgetInputSignals->setHorizontalHeaderLabels(labels);
+   tableWidgetInputSignals->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
+   tableWidgetInputSignals->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Fixed);
+   tableWidgetInputSignals->horizontalHeader()->setSectionResizeMode(2, QHeaderView::Fixed);
+
+/* QT4
    tableWidgetInputSignals->horizontalHeader()->setResizeMode(0, QHeaderView::Stretch);
    tableWidgetInputSignals->horizontalHeader()->setResizeMode(1, QHeaderView::Fixed);
-   tableWidgetInputSignals->horizontalHeader()->setResizeMode(2, QHeaderView::Fixed);
+   tableWidgetInputSignals->horizontalHeader()->setResizeMode(2, QHeaderView::Fixed); */
    tableWidgetInputSignals->verticalHeader()->hide();
 
    // bit delegate
@@ -341,10 +346,17 @@ SetupDialog::SetupDialog(QString configPath)
    olabels << "Funktion" << "LED" << "Bit" << "Mode";
 
    tableWidgetOutputSignals->setHorizontalHeaderLabels(olabels);
+
+   tableWidgetOutputSignals->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
+   tableWidgetOutputSignals->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Fixed);
+   tableWidgetOutputSignals->horizontalHeader()->setSectionResizeMode(2, QHeaderView::Fixed);
+   tableWidgetOutputSignals->horizontalHeader()->setSectionResizeMode(3, QHeaderView::Fixed);
+
+   /* QT4
    tableWidgetOutputSignals->horizontalHeader()->setResizeMode(0, QHeaderView::Stretch);
    tableWidgetOutputSignals->horizontalHeader()->setResizeMode(1, QHeaderView::Fixed);
    tableWidgetOutputSignals->horizontalHeader()->setResizeMode(2, QHeaderView::Fixed);
-   tableWidgetOutputSignals->horizontalHeader()->setResizeMode(3, QHeaderView::Fixed);
+   tableWidgetOutputSignals->horizontalHeader()->setResizeMode(3, QHeaderView::Fixed); */
    tableWidgetOutputSignals->verticalHeader()->hide();
 
    // led delegate
@@ -400,8 +412,11 @@ SetupDialog::SetupDialog(QString configPath)
    slabels << "Funktion" << "Sound";
 
    tableWidgetSound->setHorizontalHeaderLabels(slabels);
+   tableWidgetSound->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
+   tableWidgetSound->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Fixed);
+   /* QT4
    tableWidgetSound->horizontalHeader()->setResizeMode(0, QHeaderView::Stretch);
-   tableWidgetSound->horizontalHeader()->setResizeMode(1, QHeaderView::Fixed);
+   tableWidgetSound->horizontalHeader()->setResizeMode(1, QHeaderView::Fixed); */
    tableWidgetSound->verticalHeader()->hide();
 
    // sound delegate
@@ -440,8 +455,11 @@ SetupDialog::SetupDialog(QString configPath)
    alabels << "Funktion" << "Bit";
 
    tableWidgetAnalogInputs->setHorizontalHeaderLabels(olabels);
+   tableWidgetAnalogInputs->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
+   tableWidgetAnalogInputs->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Fixed);
+   /* QT4
    tableWidgetAnalogInputs->horizontalHeader()->setResizeMode(0, QHeaderView::Stretch);
-   tableWidgetAnalogInputs->horizontalHeader()->setResizeMode(1, QHeaderView::Fixed);
+   tableWidgetAnalogInputs->horizontalHeader()->setResizeMode(1, QHeaderView::Fixed); */
    tableWidgetAnalogInputs->verticalHeader()->hide();
 
    ComboBoxDelegate* abitDelegate = new ComboBoxDelegate(this);
@@ -815,13 +833,13 @@ void SetupDialog::on_doubleSpinBoxSlotLength_valueChanged(double value)
 
 void SetupDialog::on_comboBoxDevice_currentIndexChanged(const QString text)
 {
-   strcpy(usbDevice, text.toAscii());
+   strcpy(usbDevice, text.toLatin1());
    tell(eloAlways, "set device to '%s'", usbDevice);
 }
 
 void SetupDialog::on_comboBoxDevice_editTextChanged(const QString text)
 {
-   strcpy(usbDevice, text.toAscii());
+   strcpy(usbDevice, text.toLatin1());
    tell(eloAlways, "set device to '%s'", usbDevice);
 }
 
@@ -843,9 +861,9 @@ void SetupDialog::on_comboBoxAlsaDevice_currentIndexChanged(const QString text)
          continue;
 
       tell(eloDebug2, "using sound device '%s'",
-           d->name.toAscii().constData());
+           d->name.toLatin1().constData());
 
-      strcpy(alsaDevice, d->name.toAscii());
+      strcpy(alsaDevice, d->name.toLatin1());
 
       break;
    }
@@ -858,7 +876,7 @@ void SetupDialog::on_comboBoxAlsaDevice_currentIndexChanged(const QString text)
 
 void SetupDialog::on_lineEditCourse_editingFinished()
 {
-   strcpy(courseName, lineEditCourse->text().toAscii());
+   strcpy(courseName, lineEditCourse->text().toLatin1());
 }
 
 //***************************************************************************
@@ -867,7 +885,7 @@ void SetupDialog::on_lineEditCourse_editingFinished()
 
 void SetupDialog::on_lineEditDbName_editingFinished()
 {
-   strcpy(databaseName, lineEditDbName->text().toAscii());
+   strcpy(databaseName, lineEditDbName->text().toLatin1());
 }
 
 //***************************************************************************
@@ -876,7 +894,7 @@ void SetupDialog::on_lineEditDbName_editingFinished()
 
 void SetupDialog::on_lineEditResourcePath_editingFinished()
 {
-   strcpy(resourcePath, lineEditResourcePath->text().toAscii());
+   strcpy(resourcePath, lineEditResourcePath->text().toLatin1());
 }
 
 //***************************************************************************
@@ -1051,7 +1069,7 @@ void SetupDialog::outputSignalChanged(int row, int col)
 
    if (col == 1)
    {
-      outputBits[row].ledid = toLedId(value.toAscii());
+      outputBits[row].ledid = toLedId(value.toLatin1());
    }
    else if (col == 2)
    {
@@ -1062,7 +1080,7 @@ void SetupDialog::outputSignalChanged(int row, int col)
    }
    else if (col == 3)
    {
-      outputBits[row].mode = toOutputMode(value.toAscii());
+      outputBits[row].mode = toOutputMode(value.toLatin1());
    }
 }
 

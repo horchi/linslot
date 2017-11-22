@@ -20,6 +20,7 @@ TEMPLATE  = app
 CONFIG    += qt debug
 
 QT += sql
+QT += widgets
 
 FORMS       = linslot.ui setup.ui highscore.ui
 

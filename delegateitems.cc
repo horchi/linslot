@@ -52,9 +52,9 @@ QSizeF ExtItemDelegate::doTextLayout(int lineWidth) const
 void ExtItemDelegate::paint(QPainter* painter, const QStyleOptionViewItem & option,
                             const QModelIndex & index) const
 {
-   QStyleOptionViewItemV2 opt = setOptions(index, option);
-   const QStyleOptionViewItemV2 *v2 = qstyleoption_cast<const QStyleOptionViewItemV2 *>(&option);
-   opt.features = v2 ? v2->features : QStyleOptionViewItemV2::ViewItemFeatures(QStyleOptionViewItemV2::None);
+   QStyleOptionViewItem opt = setOptions(index, option);
+   const QStyleOptionViewItem *v2 = qstyleoption_cast<const QStyleOptionViewItem *>(&option);
+   opt.features = v2 ? v2->features : QStyleOptionViewItem::ViewItemFeatures(QStyleOptionViewItem::None);
 
    painter->save();
 
@@ -92,7 +92,7 @@ void ExtItemDelegate::paint(QPainter* painter, const QStyleOptionViewItem & opti
    if (value.isValid())
    {
       checkState = static_cast<Qt::CheckState>(value.toInt());
-      checkRect = check(opt, opt.rect, value);
+      //checkRect = check(opt, opt.rect, value);  // check is missing in QT5 - needed??
    }
 
    doLayout(opt, &checkRect, &decorationRect, &displayRect, false);
@@ -137,10 +137,10 @@ void ExtItemDelegate::drawDisplay(QPainter *painter, const QStyleOptionViewItem 
       painter->restore();
    }
 
-   const QStyleOptionViewItemV2 opt = option;
+   const QStyleOptionViewItem opt = option;
    const int textMargin = QApplication::style()->pixelMetric(QStyle::PM_FocusFrameHMargin) + 1;
    QRect textRect = rect.adjusted(textMargin, 0, -textMargin, 0); // remove width padding
-   const bool wrapText = opt.features & QStyleOptionViewItemV2::WrapText;
+   const bool wrapText = opt.features & QStyleOptionViewItem::WrapText;
    textOption.setWrapMode(wrapText ? QTextOption::WordWrap : QTextOption::ManualWrap);
    textOption.setTextDirection(option.direction);
    textOption.setAlignment(QStyle::visualAlignment(option.direction, option.displayAlignment));
@@ -187,92 +187,6 @@ void ExtItemDelegate::drawBackglap(QPainter *painter,
                                      const QModelIndex &index) const
 {
    QItemDelegate::drawBackground(painter, option, index);
-}
-
-//***************************************************************************
-// Class WordWrapDelegate
-//***************************************************************************
-//***************************************************************************
-// Object
-//***************************************************************************
-
-WordWrapDelegate::WordWrapDelegate(QObject* parent, QTableView* aView)
-      : ExtItemDelegate(parent)
-{
-   view = aView;
-}
-
-QSize WordWrapDelegate::sizeHint(const QStyleOptionViewItem& option,
-                                 const QModelIndex& index) const
-{
-   int width = -1;
-   QVariant value = index.data(Qt::DisplayRole);
-
-   if (value.type() != QVariant::String)
-      return ExtItemDelegate::sizeHint(option, index);
-
-   QRect decorationRect = rect(option, index, Qt::DecorationRole);
-   QRect displayRect = rect(option, index, Qt::DisplayRole);
-
-   // get actual width
-
-   if (view)
-      width = view->columnWidth(index.column());
-
-   // workalap, due to sizeHint is called for hidden colums too :(
-
-   if (width < 5)
-      return QSize(0,0); // ExtItemDelegate::sizeHint(option, index);
-
-   QString text = value.toString();
-   value = index.data(Qt::FontRole);
-   QFont fnt = qvariant_cast<QFont>(value).resolve(option.font);
-   QRect r = option.rect;
-
-   if (width >= 0)
-      r.setWidth(width);
-
-   displayRect = textRectangle(0, r, fnt, text);
-
-   return (decorationRect|displayRect).size();
-}
-
-void WordWrapDelegate::drawDisplay(QPainter *fp_painter, const QStyleOptionViewItem &f_option,
-                                   const QRect &f_rect, const QString &f_text) const
-{
-   QPen pen(fp_painter->pen());
-   QFont font(fp_painter->font());
-   QPalette::ColorGroup colorgroup(f_option.state & QStyle::State_Enabled ? QPalette::Normal : QPalette::Disabled);
-
-   QTextOption textOption;
-   textOption.setWrapMode(QTextOption::WordWrap);
-   textOption.setAlignment(f_option.displayAlignment);
-
-   QRect textRect = f_rect.adjusted(1, 0, -1, 0);             // remove width padding
-   textRect.setTop(qMin(f_rect.top(), f_option.rect.top()));
-   textRect.setHeight(qMax(f_rect.height(), f_option.rect.height()));
-
-   if (f_option.state & QStyle::State_Selected)
-   {
-      fp_painter->fillRect(f_rect, f_option.palette.brush(colorgroup, QPalette::Highlight));
-      fp_painter->setPen(f_option.palette.color(colorgroup, QPalette::HighlightedText));
-   }
-   else
-      fp_painter->setPen(f_option.palette.color(colorgroup, QPalette::Text));
-
-   if (f_option.state & QStyle::State_Editing)
-   {
-      fp_painter->save();
-      fp_painter->setPen(f_option.palette.color(colorgroup, QPalette::Text));
-      fp_painter->drawRect(f_rect.adjusted(0, 0, -1, -1));
-      fp_painter->restore();
-   }
-
-   fp_painter->setFont(f_option.font);
-   fp_painter->drawText(textRect, f_text, textOption);
-
-   fp_painter->setFont(font);
-   fp_painter->setPen(pen);
 }
 
 //***************************************************************************

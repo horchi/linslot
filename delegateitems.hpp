@@ -24,7 +24,7 @@ class ExtItemDelegate : public QItemDelegate
 {
    Q_OBJECT
 
-   public: 
+   public:
 
       ExtItemDelegate(QObject* parent = 0) :  QItemDelegate(parent)  {}
 
@@ -55,27 +55,6 @@ class ExtItemDelegate : public QItemDelegate
 
       mutable QTextLayout textLayout;
       mutable QTextOption textOption;
-};
-
-//***************************************************************************
-// Class WordWrapDelegate
-//***************************************************************************
-
-class WordWrapDelegate : public ExtItemDelegate
-{
-      Q_OBJECT
-
-   public:
-
-      WordWrapDelegate(QObject* fp_parent = NULL, QTableView* aView = NULL);
-
-      virtual QSize sizeHint(const QStyleOptionViewItem& option, const QModelIndex& index) const;
-      virtual void drawDisplay(QPainter* fp_painter, const QStyleOptionViewItem &f_option,
-                               const QRect &f_rect, const QString &f_text) const;
-
-   protected:
-
-      QTableView* view;
 };
 
 //***************************************************************************

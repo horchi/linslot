@@ -20,7 +20,7 @@
 #  include <alsa.hpp>
 #endif
 
-#include <QSound>
+// #include <QSound>
 // #include <QtTest/QTest>
 #include <QFile>
 #include <QMessageBox>

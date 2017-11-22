@@ -95,13 +95,13 @@ bool QAlsaSound::init(const QString& aFilename)
 
 	::read(fd, buffer, maxHeader);
 
-	if (findchunk(buffer, "RIFF", maxHeader) != buffer) 
+	if (findchunk(buffer, "RIFF", maxHeader) != buffer)
    {
 		printf("Bad format: Cannot find RIFF file marker\n");
 		return false;
 	}
 
-	if (!findchunk(buffer, "WAVE", maxHeader)) 
+	if (!findchunk(buffer, "WAVE", maxHeader))
    {
 		printf("Bad format: Cannot find WAVE file marker\n");
 		return  false ;
@@ -109,7 +109,7 @@ bool QAlsaSound::init(const QString& aFilename)
 
 	if (!(ptr = findchunk(buffer, "fmt ", maxHeader)))
    {
-		printf("Bad format: Can't find 'fmt' file marker\n");	
+		printf("Bad format: Can't find 'fmt' file marker\n");
 		return  false;
 	}
 
@@ -138,7 +138,7 @@ bool QAlsaSound::init(const QString& aFilename)
 
 		default:
       {
-         printf("Unsupported format (%d) bits per seconds!\n", 
+         printf("Unsupported format (%d) bits per seconds!\n",
                 waveformat.wBitsPerSample);
 			return false;
       }
@@ -148,17 +148,17 @@ bool QAlsaSound::init(const QString& aFilename)
 
    // printf("opening alsa device '%s'\n", devicename.toAscii().constData());
 
-	if ((err = snd_pcm_open(&handle, devicename.toAscii(), 
+	if ((err = snd_pcm_open(&handle, devicename.toLatin1(),
                            SND_PCM_STREAM_PLAYBACK, SND_PCM_ASYNC)) < 0)
    {
-      const char* device = devicename.toAscii();
+      const char* device = devicename.toLatin1();
 
-      printf("cannot open audio device %s (%s)\n", 
+      printf("cannot open audio device %s (%s)\n",
              device, snd_strerror(err));
 
       return false;
    }
-   
+
    // alloc parameter object and fit with default values
 
    snd_pcm_hw_params_alloca(&params);
@@ -184,7 +184,7 @@ bool QAlsaSound::init(const QString& aFilename)
    buffer_size = chunk_size * waveformat.wChannels * 2;
 	bits_per_sample = snd_pcm_format_physical_width(format);
 	bits_per_frame = bits_per_sample * waveformat.wChannels;
-	
+
 	return true;
 }
 
@@ -206,26 +206,26 @@ void QAlsaSound::playSound()
 
    // start playback
 
-   while (running && (count = ::read(fd, buffer, buffer_size))) 
+   while (running && (count = ::read(fd, buffer, buffer_size)))
 	{
 		f = count * 8 / bits_per_frame;
 		written = 0;
 
-		while (running && f > 0) 
+		while (running && f > 0)
       {
 			frames = snd_pcm_writei(handle, buffer + written, f);
 
-         if (frames == -EPIPE) 
+         if (frames == -EPIPE)
          {
             printf("underrun occurred\n");
             snd_pcm_prepare(handle);
-         } 
+         }
          else if (frames == -EAGAIN)
          {
  				snd_pcm_wait(handle, 100);
          }
 
-         else if (frames < 0) 
+         else if (frames < 0)
          {
             printf("error from writei: %s\n", snd_strerror(frames));
             frames = snd_pcm_recover(handle, frames, 0);
@@ -248,25 +248,25 @@ void QAlsaSound::playSound()
 //***************************************************************************
 
 char* QAlsaSound::findchunk(char* pstart, const char* fourcc, size_t n)
-{	
+{
    char* pend;
 	int k, test;
-   
+
 	pend = pstart + n;
 
 	while (pstart < pend)
-	{ 	
+	{
       if (*pstart == *fourcc)       // found match for first char
-		{	
+		{
          test = true;
-         
+
 			for (k = 1 ; fourcc[k] != 0 ; k++)
 				test = (test ? (pstart[k] == fourcc[k]) : false);
-         
+
 			if (test)
 				return pstart;
       };
-      
+
 		pstart++;
    }
 
@@ -309,7 +309,7 @@ void QAlsaSound::cleanup()
 {
    QAlsaSound* sound;
 
-   for (int i = 0; i < sounds.size(); ++i) 
+   for (int i = 0; i < sounds.size(); ++i)
    {
       if (sounds.at(i)->isFinished())
       {
@@ -325,7 +325,7 @@ void QAlsaSound::cleanup()
 //***************************************************************************
 
 bool QAlsaSound::isAvailable()
-{ 
+{
    int err;
    snd_pcm_t* handle;
 
@@ -333,19 +333,19 @@ bool QAlsaSound::isAvailable()
    {
       available = true;
 
-      if ((err = snd_pcm_open(&handle, devicename.toAscii(), 
+      if ((err = snd_pcm_open(&handle, devicename.toLatin1(),
                               SND_PCM_STREAM_PLAYBACK, SND_PCM_ASYNC)) < 0)
       {
          available = false;
 
-         printf("cannot open audio device %s (%s)\n", 
+         printf("cannot open audio device %s (%s)\n",
                 devicename.toLatin1().constData(), snd_strerror(err));
       }
       else
          snd_pcm_close(handle);
    }
 
-   return available; 
+   return available;
 }
 
 //***************************************************************************
@@ -394,14 +394,14 @@ void QAlsaSound::run()
 //***************************************************************************
 
 const QAlsaSound::Device* QAlsaSound::getDevice(int index)
-{ 
+{
    if (!devices.size())
       fillDeviceList();
 
    if (index >= devices.size())
       return 0;
 
-   return devices.at(index); 
+   return devices.at(index);
 }
 
 //***************************************************************************
@@ -435,7 +435,7 @@ int QAlsaSound::fillDeviceList()
 
       name = snd_device_name_get_hint(*p, "NAME");
       desc = snd_device_name_get_hint(*p, "DESC");
-      
+
       dev->name = QString(name);
       dev->desc = QString(desc);
 

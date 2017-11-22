@@ -129,7 +129,7 @@ void RenderArea::editClicked(bool)
    int row = tableView->currentIndex().row();
    int profileId = model->index(row, model->fieldIndex("PROFILE_ID")).data().toInt();
 
-   QSqlQuery query("select NAME, COLOR, ACTIVE from profiles where PROFILE_ID = '" + 
+   QSqlQuery query("select NAME, COLOR, ACTIVE from profiles where PROFILE_ID = '" +
                QString::number(profileId) + "';");
 
    query.next();
@@ -171,7 +171,7 @@ void RenderArea::editClicked(bool)
    connect(buttonBox, SIGNAL(accepted()), editDialog, SLOT(accept()));
    connect(buttonBox, SIGNAL(rejected()), editDialog, SLOT(reject()));
    connect(colorButton, SIGNAL(clicked(bool)), this, SLOT(getColor(bool)));
-   
+
    editDialog->setWindowTitle("Eigenschaften");
    editDialog->setLayout(layout);
    editDialog->resize(300, 150);
@@ -181,8 +181,8 @@ void RenderArea::editClicked(bool)
       tell(eloAlways, "accepted");
 
       QSqlQuery query("update profiles set "
-                      "NAME = '" + nameEdit->text() + "', " 
-                      "ACTIVE = '" + (checkBoxActive->isChecked() ? "true" : "false") + "', " 
+                      "NAME = '" + nameEdit->text() + "', "
+                      "ACTIVE = '" + (checkBoxActive->isChecked() ? "true" : "false") + "', "
                       "COLOR = '" + colorButton->palette().color(QPalette::Button).name() + "' "
                       "where PROFILE_ID = " + QString::number(profileId) + ";");
 
@@ -207,10 +207,10 @@ void RenderArea::removeClicked(bool)
    {
       QSqlQuery query;
 
-      query.exec("delete from profiles where PROFILE_ID = " 
+      query.exec("delete from profiles where PROFILE_ID = "
                  + QString::number(profileId) + ";");
-      
-      query.exec("delete from lap_profiles where PROFILE_ID = " 
+
+      query.exec("delete from lap_profiles where PROFILE_ID = "
                  + QString::number(profileId) + ";");
 
       model->select();
@@ -228,7 +228,7 @@ void RenderArea::doubleClicked(const QModelIndex& index)
 
    int profileId = model->index(index.row(), model->fieldIndex("PROFILE_ID")).data().toInt();
 
-   QSqlQuery query("select NAME, COLOR from profiles where PROFILE_ID = '" + 
+   QSqlQuery query("select NAME, COLOR from profiles where PROFILE_ID = '" +
                QString::number(profileId) + "';");
 
    query.next();
@@ -252,7 +252,7 @@ void RenderArea::doubleClicked(const QModelIndex& index)
 
    // add to drwaing list
 
-   QSqlQuery q("select VOLT, AMPERE from lap_profiles where PROFILE_ID = '" + 
+   QSqlQuery q("select VOLT, AMPERE from lap_profiles where PROFILE_ID = '" +
                QString::number(profileId) + "';");
 
    while (q.next())
@@ -265,14 +265,14 @@ void RenderArea::doubleClicked(const QModelIndex& index)
    if (count)
    {
       line.color.setNamedColor(colorName);
-      
+
       line.name = name;
       lines.append(line);
-      
-      const char* n = line.color.name().toAscii();
-      tell(eloAlways, "added (%d) values; color '%s', now (%d) lines in list", 
+
+      const char* n = line.color.name().toLatin1();
+      tell(eloAlways, "added (%d) values; color '%s', now (%d) lines in list",
            count, n, lines.size());
-      
+
       repaint();
    }
 }
@@ -331,7 +331,7 @@ void RenderArea::paintEvent(QPaintEvent* )
 
    painter = new QPainter(this);
 
-   // 
+   //
 
    paintXAxis();
    paintYAxis();
@@ -340,7 +340,7 @@ void RenderArea::paintEvent(QPaintEvent* )
 
    int iOff = (int)(xStart * 1000.0 / gcScale);
 
-   // 
+   //
 
    for (int l = 0; l < lines.size(); l++)
    {
@@ -355,7 +355,7 @@ void RenderArea::paintEvent(QPaintEvent* )
 
       if (lines.at(l).volts.size() > iOff)
       {
-         for (int i = iOff; i < lines.at(l).volts.size(); i++) 
+         for (int i = iOff; i < lines.at(l).volts.size(); i++)
          {
             int yVLast = yVNow;
             int yALast = yANow;
@@ -384,7 +384,7 @@ void RenderArea::paintEvent(QPaintEvent* )
                painter->drawLine(xNow, yALast, xNow+xDiff, yANow);
             }
             if (showPower)
-            {            
+            {
                pen.setStyle(Qt::SolidLine);
                painter->setPen(pen);
                painter->drawLine(xNow, yPLast, xNow+xDiff, yPNow);

@@ -19,7 +19,7 @@
 
 #include <QMessageBox>
 #include <QMetaType>
-#include <QSound>
+//#include <QSound>
 #include <QGraphicsView>
 #include <QDialog>
 #include <QInputDialog>
@@ -241,7 +241,8 @@ void LinslotWindow::init()
       theSlots[i].comboCar = i == 0 ? comboBoxCar1 : comboBoxCar2;
 
       theSlots[i].tableWidget = i == 0 ? tableWidgetSlot1 : tableWidgetSlot2;
-      theSlots[i].tableWidget->horizontalHeader()->setResizeMode(1, QHeaderView::Stretch);
+      theSlots[i].tableWidget->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Stretch); // QT5
+      // theSlots[i].tableWidget->horizontalHeader()->setResizeMode(1, QHeaderView::Stretch); // QT4
       theSlots[i].tableWidget->setSelectionBehavior(QAbstractItemView::SelectRows);
       theSlots[i].tableWidget->setEditTriggers(QAbstractItemView::NoEditTriggers);
 
@@ -736,10 +737,10 @@ void LinslotWindow::applyOptions()
 
    // TODO to be removed (driver and car should replaced with getDriver(), getCar() calles)
 
-   strncpy(theSlots[0].driver, theSlots[0].getDriver().toAscii(), sizeName);
-   strncpy(theSlots[1].driver, theSlots[1].getDriver().toAscii(), sizeName);
-   strncpy(theSlots[0].car, theSlots[0].getCar().toAscii(), sizeName);
-   strncpy(theSlots[1].car, theSlots[1].getCar().toAscii(), sizeName);
+   strncpy(theSlots[0].driver, theSlots[0].getDriver().toLatin1(), sizeName);
+   strncpy(theSlots[1].driver, theSlots[1].getDriver().toLatin1(), sizeName);
+   strncpy(theSlots[0].car, theSlots[0].getCar().toLatin1(), sizeName);
+   strncpy(theSlots[1].car, theSlots[1].getCar().toLatin1(), sizeName);
 
    // Image animation mode
 
@@ -766,7 +767,7 @@ void LinslotWindow::on_comboBoxDriver1_currentIndexChanged(QString value)
 {
    if (!supressComboBoxUpdate)
    {
-      strncpy(theSlots[0].driver, value.toAscii(), sizeName);
+      strncpy(theSlots[0].driver, value.toLatin1(), sizeName);
 
       updateDriverImage(labelImageSlot1->width(),
                         labelImageSlot1->height());
@@ -781,7 +782,7 @@ void LinslotWindow::on_comboBoxDriver2_currentIndexChanged(QString value)
 {
    if (!supressComboBoxUpdate)
    {
-      strncpy(theSlots[1].driver, value.toAscii(), sizeName);
+      strncpy(theSlots[1].driver, value.toLatin1(), sizeName);
 
       updateDriverImage(labelImageSlot1->width(),
                         labelImageSlot1->height());
@@ -796,7 +797,7 @@ void LinslotWindow::on_comboBoxCar1_currentIndexChanged(QString value)
 {
    if (!supressComboBoxUpdate)
    {
-      strncpy(theSlots[0].car, value.toAscii(), sizeName);
+      strncpy(theSlots[0].car, value.toLatin1(), sizeName);
 
       updateDriverImage(labelImageSlot1->width(),
                         labelImageSlot1->height());
@@ -811,7 +812,7 @@ void LinslotWindow::on_comboBoxCar2_currentIndexChanged(QString value)
 {
    if (!supressComboBoxUpdate)
    {
-      strncpy(theSlots[1].car, value.toAscii(), sizeName);
+      strncpy(theSlots[1].car, value.toLatin1(), sizeName);
 
       updateDriverImage(labelImageSlot1->width(),
                         labelImageSlot1->height());
@@ -1836,7 +1837,7 @@ int LinslotWindow::openDb()
 
    // db path
 
-   sprintf(dbPath, "%s/%s", configPath.toAscii().constData(),
+   sprintf(dbPath, "%s/%s", configPath.toLatin1().constData(),
            setupDialog->getDatabaseName());
 
    // Open database via QT
@@ -2032,7 +2033,7 @@ int LinslotWindow::saveRace()
       duration = 0;
 
       if (tableWidgetSlot1->item(l, 1))
-         duration = tableWidgetSlot1->item(l, 0)->text().toAscii();
+         duration = tableWidgetSlot1->item(l, 0)->text().toLatin1();
 
       db->bindInt(sqlInsertLap, 1, raceId);       // RACE_ID
       db->bindInt(sqlInsertLap, 2, driver1);      // DRIVER_NR
@@ -2057,7 +2058,7 @@ int LinslotWindow::saveRace()
       duration = 0;
 
       if (tableWidgetSlot2->item(l, 1))
-         duration = tableWidgetSlot2->item(l, 0)->text().toAscii();
+         duration = tableWidgetSlot2->item(l, 0)->text().toLatin1();
 
       db->bindInt(sqlInsertLap, 1, raceId);       // RACE_ID
       db->bindInt(sqlInsertLap, 2, driver2);      // DRIVER_NR
@@ -2353,10 +2354,18 @@ void LinslotWindow::on_toolButtonTest_clicked()
    tableView->setSelectionBehavior(QAbstractItemView::SelectRows);
    tableView->setEditTriggers(QAbstractItemView::NoEditTriggers);
    tableView->setMaximumSize(400, 9999999);
+
+   tableView->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Fixed);
+   tableView->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Stretch);
+   tableView->horizontalHeader()->setSectionResizeMode(2, QHeaderView::Fixed);
+   tableView->horizontalHeader()->setSectionResizeMode(3, QHeaderView::Fixed);
+
+   /* QT4
    tableView->horizontalHeader()->setResizeMode(0, QHeaderView::Fixed);
    tableView->horizontalHeader()->setResizeMode(1, QHeaderView::Stretch);
    tableView->horizontalHeader()->setResizeMode(2, QHeaderView::Fixed);
-   tableView->horizontalHeader()->setResizeMode(3, QHeaderView::Fixed);
+   tableView->horizontalHeader()->setResizeMode(3, QHeaderView::Fixed); */
+
    profileDialog->setWindowTitle("Rundenprofile");
 
    scaleUp->setAutoRepeat(true);

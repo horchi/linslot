@@ -14,7 +14,7 @@
 
 #include <alsa/asoundlib.h>
 
-#include <QSound>
+//#include <QSound>
 #include <QThread>
 
 //***************************************************************************
@@ -32,7 +32,7 @@ class QAlsaSound : public QThread
       };
 
       struct WaveFormat
-      {	
+      {
          u_int32_t dwSize;
          u_int16_t wFormatTag;
          u_int16_t wChannels;
@@ -41,10 +41,10 @@ class QAlsaSound : public QThread
          u_int16_t wBlockAlign;
          u_int16_t wBitsPerSample;
       };
-      
+
       QAlsaSound(const QString& filename, QObject* aParent = 0);
       virtual ~QAlsaSound();
-      
+
       // getter
 
       bool isInitialized()   { return initialized; }
@@ -70,7 +70,7 @@ class QAlsaSound : public QThread
       static void play(const QString& aFilename);
       static void cleanup();         // cleanup finished static instances
       static QString getDeviceName() { return devicename; }
-      static void setDeviceName(QString device) 
+      static void setDeviceName(QString device)
       { devicename = device; available = -1; }
 
    private:
@@ -89,7 +89,7 @@ class QAlsaSound : public QThread
       char* device;
       snd_pcm_uframes_t chunk_size, buffer_size;
       size_t bits_per_sample, bits_per_frame;
-      
+
       int fd;
       u_long datastart;
       QObject* parent;
