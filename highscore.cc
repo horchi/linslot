@@ -20,7 +20,7 @@
 //***************************************************************************
 
 HighscoreDialog::HighscoreDialog()
-{ 
+{
    db = 0;
 
    setupUi(this);
@@ -39,10 +39,10 @@ HighscoreDialog::~HighscoreDialog()
 }
 
 //***************************************************************************
-// 
+//
 //***************************************************************************
 
-void HighscoreDialog::on_tableWidgetRaces_currentCellChanged(int currentRow, int /*currentColumn*/, 
+void HighscoreDialog::on_tableWidgetRaces_currentCellChanged(int currentRow, int /*currentColumn*/,
                                                              int previousRow, int /*previousColumn*/)
 {
    if (currentRow != previousRow && currentRow >= 0)
@@ -78,7 +78,7 @@ int HighscoreDialog::fillBestOf()
                "d.DRIVER_ID=l.DRIVER_NR and "                           \
                "l.LAP_TIME IS NOT NULL "                                \
                "ORDER BY l.LAP_TIME;");
-   
+
    fillTableWidget(tableWidgetBestOf, db, 1);
 
    return 0;
@@ -93,7 +93,7 @@ int HighscoreDialog::fillRaces()
                "LAP_LENGTH AS Länge, "   \
                "COURSE AS Strecke "      \
                "from races ORDER BY DATE DESC;");
-   
+
    fillTableWidget(tableWidgetRaces, db, 1);
 
    return 0;
@@ -117,7 +117,7 @@ int HighscoreDialog::fillLaps(int raceId)
    db->execute(sql);
    // free(sql);
    strcpy(driver2, db->getValueOf("NAME"));
-   
+
    // build statement
 
    sprintf(sql, "SELECT "                                             \
@@ -131,7 +131,7 @@ int HighscoreDialog::fillLaps(int raceId)
            "a.driver_nr=1 and "                                         \
            "b.driver_nr=2 ORDER BY a.LAP_NR;",
            driver1, driver2);
-   
+
    // execute statement
 
    db->prepare(sql, sqlSelectLaps);
@@ -180,7 +180,7 @@ int HighscoreDialog::fillTableWidget(QTableWidget* widget, SqliteDb* db, int sta
       for (f = (SqliteDb::Field*)r->fields.getFirst(); f; f = (SqliteDb::Field*)r->fields.getNext())
       {
          if (col >= startCol)
-            header << f->name;
+            header << f->name;   // #TODO UTF8
 
          col++;
       }
@@ -188,14 +188,14 @@ int HighscoreDialog::fillTableWidget(QTableWidget* widget, SqliteDb* db, int sta
 
    widget->setHorizontalHeaderLabels(header);
    widget->horizontalHeaderItem(1)->font().setBold(true);
-   
+
    // values
 
    for (r = db->getFirstResult(); r; r = db->getNextResult())
    {
       col = 0;
 
-      for (f = (SqliteDb::Field*)r->fields.getFirst(); f; 
+      for (f = (SqliteDb::Field*)r->fields.getFirst(); f;
            f = (SqliteDb::Field*)r->fields.getNext())
       {
          if (!col)

@@ -1,7 +1,7 @@
 //***************************************************************************
 // Group Linslot / Linux - Slotrace Manager
 // File setup.cc
-// Date 16.12.06 - Jörg Wendel
+// Date 16.12.06 - JÃ¶rg Wendel
 // This code is distributed under the terms and conditions of the
 // GNU GENERAL PUBLIC LICENSE. See the file COPYING for details.
 //***************************************************************************
@@ -39,7 +39,7 @@ SetupDialog::SetupDialog(QString configPath)
 
    setupUi(this);
 
-   QCoreApplication::setOrganizationName("Jörg Wendel");
+   QCoreApplication::setOrganizationName("JÃ¶rg Wendel");
    QCoreApplication::setApplicationName("linslot") ;
 
    settings = new QSettings(configPath + "/linslotrc", QSettings::IniFormat);

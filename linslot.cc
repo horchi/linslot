@@ -1,7 +1,7 @@
 //***************************************************************************
 // Group Linslot / Linux - Slotrace Manager
 // File linslot.cc
-// Date 17.1.17 - Jörg Wendel
+// Date 17.1.17 - JÃ¶rg Wendel
 // This code is distributed under the terms and conditions of the
 // GNU GENERAL PUBLIC LICENSE. See the file COPYING for details.
 //***************************************************************************
@@ -223,8 +223,8 @@ void LinslotWindow::init()
    {
       theSlots[i].lap = -1;
       theSlots[i].penalty = 0;
-      *theSlots[i].driver = 0;
-      *theSlots[i].car = 0;
+      //*theSlots[i].driver = 0;
+      //*theSlots[i].car = 0;
       theSlots[i].fueling = no;
       theSlots[i].gcProfile = na;
 
@@ -341,10 +341,10 @@ void LinslotWindow::storeConfig()
 
    setupDialog->getSettings()->beginGroup("common");
 
-   setupDialog->getSettings()->setValue("driver0", theSlots[0].driver);
-   setupDialog->getSettings()->setValue("driver1", theSlots[1].driver);
-   setupDialog->getSettings()->setValue("car0", theSlots[0].car);
-   setupDialog->getSettings()->setValue("car1", theSlots[1].car);
+   setupDialog->getSettings()->setValue("driver0", theSlots[0].getDriver());
+   setupDialog->getSettings()->setValue("driver1", theSlots[1].getDriver());
+   setupDialog->getSettings()->setValue("car0", theSlots[0].getCar());
+   setupDialog->getSettings()->setValue("car1", theSlots[1].getCar());
 
    setupDialog->getSettings()->endGroup();
 }
@@ -358,7 +358,7 @@ void LinslotWindow::resetWidgets()
    QStringList header;
    header << "Zeit" << "km/h";
 
-   frameTestMode->setVisible(testMode);  // #TODO, speciam test mode witch connection and buttons
+   frameTestMode->setVisible(testMode);  // #TODO, special test mode witch connection and buttons
    labelInfo->setText("Standby");
    labelFastLap->setText("");
 
@@ -649,7 +649,7 @@ void LinslotWindow::playSound(int fct)
 void LinslotWindow::onOptionsAccepted()
 {
    if (oldSpiSetting != setupDialog->getWithSpiExtension())
-      QMessageBox::information(0, "Adruino", "Nach ändern der SPI Einstellung muss der "
+      QMessageBox::information(0, "Adruino", "Nach Ã¤ndern der SPI Einstellung muss der "
                                "Arduino neu gestartet werden!");
 
    tell(eloAlways, "Reconnect to apply option to arduino");
@@ -735,13 +735,6 @@ void LinslotWindow::applyOptions()
 
    supressComboBoxUpdate = no;
 
-   // TODO to be removed (driver and car should replaced with getDriver(), getCar() calles)
-
-   strncpy(theSlots[0].driver, theSlots[0].getDriver().toLatin1(), sizeName);
-   strncpy(theSlots[1].driver, theSlots[1].getDriver().toLatin1(), sizeName);
-   strncpy(theSlots[0].car, theSlots[0].getCar().toLatin1(), sizeName);
-   strncpy(theSlots[1].car, theSlots[1].getCar().toLatin1(), sizeName);
-
    // Image animation mode
 
    timerAnimateImage->stop();
@@ -763,60 +756,40 @@ void LinslotWindow::applyOptions()
 // On Driver1 Index Changed
 //***************************************************************************
 
-void LinslotWindow::on_comboBoxDriver1_currentIndexChanged(QString value)
+void LinslotWindow::on_comboBoxDriver1_currentIndexChanged(QString /*value*/)
 {
    if (!supressComboBoxUpdate)
-   {
-      strncpy(theSlots[0].driver, value.toLatin1(), sizeName);
-
-      updateDriverImage(labelImageSlot1->width(),
-                        labelImageSlot1->height());
-   }
+      updateDriverImage(labelImageSlot1->width(), labelImageSlot1->height());
 }
 
 //***************************************************************************
 // On Driver2 Index Changed
 //***************************************************************************
 
-void LinslotWindow::on_comboBoxDriver2_currentIndexChanged(QString value)
+void LinslotWindow::on_comboBoxDriver2_currentIndexChanged(QString /*value*/)
 {
    if (!supressComboBoxUpdate)
-   {
-      strncpy(theSlots[1].driver, value.toLatin1(), sizeName);
-
-      updateDriverImage(labelImageSlot1->width(),
-                        labelImageSlot1->height());
-   }
+      updateDriverImage(labelImageSlot1->width(), labelImageSlot1->height());
 }
 
 //***************************************************************************
 // On Car1 Index Changed
 //***************************************************************************
 
-void LinslotWindow::on_comboBoxCar1_currentIndexChanged(QString value)
+void LinslotWindow::on_comboBoxCar1_currentIndexChanged(QString /*value*/)
 {
    if (!supressComboBoxUpdate)
-   {
-      strncpy(theSlots[0].car, value.toLatin1(), sizeName);
-
-      updateDriverImage(labelImageSlot1->width(),
-                        labelImageSlot1->height());
-   }
+      updateDriverImage(labelImageSlot1->width(), labelImageSlot1->height());
 }
 
 //***************************************************************************
 // On Car2 Index Changed
 //***************************************************************************
 
-void LinslotWindow::on_comboBoxCar2_currentIndexChanged(QString value)
+void LinslotWindow::on_comboBoxCar2_currentIndexChanged(QString /*value*/)
 {
    if (!supressComboBoxUpdate)
-   {
-      strncpy(theSlots[1].car, value.toLatin1(), sizeName);
-
-      updateDriverImage(labelImageSlot1->width(),
-                        labelImageSlot1->height());
-   }
+      updateDriverImage(labelImageSlot1->width(), labelImageSlot1->height());
 }
 
 //***************************************************************************
@@ -1005,7 +978,10 @@ void LinslotWindow::onDigitalInput(const DigitalEvent ioEvent)
             atStartTraining();
       }
       else
-         atAbort("Abbruch");
+      {
+         QString abbr("Abbruch");
+         atAbort(&abbr);
+      }
    }
 
    // process lap signals
@@ -1057,7 +1033,10 @@ void LinslotWindow::on_pushButtonStartRace_clicked()
          atStartTraining();
    }
    else
-      atAbort("Abbruch");
+   {
+      QString abbr("Abbruch");
+      atAbort(&abbr);
+   }
 }
 
 //***************************************************************************
@@ -1171,21 +1150,21 @@ void LinslotWindow::atStart()
    gettimeofday(&raceStart, 0);
    timer->stop();
 
-   if (QString(theSlots[0].driver).indexOf("GC: ") == 0)
+   if (QString(theSlots[0].getDriver().toLatin1()).indexOf("GC: ") == 0)
    {
       QSqlQuery query("select PROFILE_ID from profiles where NAME = '"
-                      + QString(theSlots[0].driver[4]) + "';");
+                      + QString(theSlots[0].getDriver().toLatin1()) + "';");
 
       if (query.next())
          theSlots[0].gcProfile = query.value(0).toInt();
       else
       {
-         tell(eloAlways, "Fatal: Profile for '%s' not found", theSlots[0].driver);
+         tell(eloAlways, "Fatal: Profile for '%s' not found", theSlots[0].getDriver().toLatin1());
          return ;
       }
 
       tell(eloDebug, "Starting ghost car '%s' profile (%d)",
-           theSlots[0].driver, theSlots[0].gcProfile);
+           theSlots[0].getDriver().toLatin1(), theSlots[0].gcProfile);
 
       thread->startGhostCar(outputBits[bitPwmOutSlot1].bit,
                             analogBits[fctGhostISlot1].bit,
@@ -1202,7 +1181,7 @@ void LinslotWindow::atStart()
       theSlots[i].lastSignal = raceStart;
 
    if (radioButtonLapRace->isChecked())
-      labelInfo->setText("Rennen läuft");
+      labelInfo->setText("Rennen lÃ¤uft");
    else
       labelInfo->setText("Freies Training");
 
@@ -1217,16 +1196,16 @@ void LinslotWindow::atFinish(int slot)
 {
    timeval tp;
    int usec;
-   char buf[100];
+   QString buf;
 
    gettimeofday(&tp, 0);
 
    if (slot >= 0)
-      sprintf(buf, "Finish\n Sieger %s", theSlots[slot].driver);
+      buf = "Finish\n Sieger " + theSlots[slot].getDriver();
    else
-      sprintf(buf, "Finish");
+      buf = "Finish";
 
-   atStop(buf);
+   atStop(&buf);
 
    playSound(sfRaceFinished);
 
@@ -1245,7 +1224,7 @@ void LinslotWindow::atFinish(int slot)
 // At Abort
 //***************************************************************************
 
-void LinslotWindow::atAbort(const char* info)
+void LinslotWindow::atAbort(QString* info)
 {
    atStop(info);
    labelElapsed->setText("0.0");
@@ -1257,7 +1236,7 @@ void LinslotWindow::atAbort(const char* info)
 // At Stop
 //***************************************************************************
 
-void LinslotWindow::atStop(const char* info)
+void LinslotWindow::atStop(QString* info)
 {
    timeval tp;
    int usec;
@@ -1288,7 +1267,7 @@ void LinslotWindow::atStop(const char* info)
 
    pushButtonStartRace->setText("St&arten");
 
-   labelInfo->setText(info);
+   labelInfo->setText(*info);
 
    radioButtonTraining->setEnabled(yes);
    radioButtonLapRace->setEnabled(yes);
@@ -1301,17 +1280,17 @@ void LinslotWindow::atStop(const char* info)
 
 void LinslotWindow::atJumpStart(int slot)
 {
-   char info[100];
+   QString info;
 
    if (setupDialog->getAbortAtJumpTheGun())
    {
-      sprintf(info, "Abbruch Frühstart '%s'", theSlots[slot].driver);
-      atAbort(info);
+      info = "Abbruch FrÃ¼hstart " + theSlots[slot].getDriver();
+      atAbort(&info);
    }
    else
    {
       playSound(sfJumpTheGun);
-      theSlots[slot].labelInfo->setText("Frühstart");
+      theSlots[slot].labelInfo->setText("FrÃ¼hstart");
 
       tell(eloAlways, "Jump start on slot %d, time penalty of (%d) seconds",
            slot+1, setupDialog->getPenaltyAtJumpTheGun());
@@ -1617,14 +1596,13 @@ void LinslotWindow::atSlotSignal(int slot, const timeval* tp)
       atJumpStart(slot);
       return ;
    }
-
-   playSound(sfLapSignal);
-
    // show overview
 
    unsigned int diff;
 
    labelFirstTime->setText("");
+
+   // #TODO lapp diff ist falsch bzw. fehlt ab und zu ?!
 
    if (theSlots[slot].lap == theSlots[other].lap)
    {
@@ -1632,8 +1610,8 @@ void LinslotWindow::atSlotSignal(int slot, const timeval* tp)
 
       diff = elapsed(&theSlots[other].lastSignal, tp);
 
-      labelFirst->setText("1 " + QString(theSlots[other].driver));
-      labelSecond->setText("2 " + QString(theSlots[slot].driver));
+      labelFirst->setText("1 " + theSlots[other].getDriver());
+      labelSecond->setText("2 " + theSlots[slot].getDriver());
       labelSecondTime->setText("+" + QString::number(diff/1000000.0, 'f', 3) + "s");
    }
    else if (theSlots[slot].lap < theSlots[other].lap)
@@ -1642,10 +1620,9 @@ void LinslotWindow::atSlotSignal(int slot, const timeval* tp)
 
       diff = theSlots[other].lap - theSlots[slot].lap;
 
-      labelFirst->setText("1 " + QString(theSlots[other].driver));
-      labelSecond->setText("2 " + QString(theSlots[slot].driver));
-      labelSecondTime->setText("+" + QString::number(diff) + " lap"
-                               + QString(diff > 1 ? "s": ""));
+      labelFirst->setText("1 " + theSlots[other].getDriver());
+      labelSecond->setText("2 " + theSlots[slot].getDriver());
+      labelSecondTime->setText("+" + QString::number(diff) + " lap" + QString(diff > 1 ? "s": ""));
    }
    else
    {
@@ -1655,14 +1632,11 @@ void LinslotWindow::atSlotSignal(int slot, const timeval* tp)
 
       diff = (theSlots[slot].lap - theSlots[other].lap) -1;
 
-
-      labelFirst->setText("1 " + QString(theSlots[slot].driver));
-      labelSecond->setText("2 " + QString(theSlots[other].driver));
+      labelFirst->setText("1 " + theSlots[slot].getDriver());
+      labelSecond->setText("2 " + theSlots[other].getDriver());
 
       if (diff)
-         labelSecondTime->setText("+" + QString::number(diff) + " lap"
-                                  + QString(diff > 1 ? "s": ""));
-
+         labelSecondTime->setText("+" + QString::number(diff) + " lap" + QString(diff > 1 ? "s": ""));
       else if (oldSecond != labelSecond->text())
          labelSecondTime->setText("");
    }
@@ -1689,12 +1663,14 @@ void LinslotWindow::atSlotSignal(int slot, const timeval* tp)
 
    // show lap overview
 
-   if (!fastLapTime || fastLapTime > usec)
+   int fastestLap = !fastLapTime || fastLapTime > usec;
+
+   if (fastestLap)
    {
       fastLapTime = usec;
 
       labelFastLap->setText("Schnellste Runde\n"
-                            + QString(theSlots[slot].driver)
+                            + theSlots[slot].getDriver()
                             + QString("  -  ")
                             + QString::number(usec/1000000.0, 'f', 3)
                             + QString("  (")
@@ -1709,6 +1685,8 @@ void LinslotWindow::atSlotSignal(int slot, const timeval* tp)
       theSlots[slot].labelFastLap->setText(QString::number(usec/1000000.0, 'f', 3));
       theSlots[slot].fastLapTime = usec;
    }
+
+   playSound(fastestLap ? sfLapSignalFast : sfLapSignal);
 
    // fueling
 
@@ -1767,9 +1745,9 @@ void LinslotWindow::updateDriverImage(int width, int height)
    for (int i = 0; i < slotCount; i++)
    {
       if (visibleImage == imgDriver)
-         path = setupDialog->getDriverImage(theSlots[i].driver);
+         path = setupDialog->getDriverImage(theSlots[i].getDriver().toLatin1());
       else
-         path = setupDialog->getCarImage(theSlots[i].car);
+         path = setupDialog->getCarImage(theSlots[i].getCar().toLatin1());
 
       if (path.size() && QFile::exists(path))
       {
@@ -1989,14 +1967,14 @@ int LinslotWindow::saveRace()
    int driver1, driver2;
    // int courseId;
 
-   if (!*theSlots[0].driver || !*theSlots[1].driver)
+   if (!*theSlots[0].getDriver().toLatin1() || !*theSlots[1].getDriver().toLatin1())
    {
-      QMessageBox::critical(this, "Fehler", "Kein Fahrer gewählt!");
+      QMessageBox::critical(this, "Fehler", "Kein Fahrer gewÃ¤hlt!");
       return 0;
    }
 
-   driver1 = getDriverId(theSlots[0].driver);
-   driver2 = getDriverId(theSlots[1].driver);
+   driver1 = getDriverId(theSlots[0].getDriver().toLatin1());
+   driver2 = getDriverId(theSlots[1].getDriver().toLatin1());
    // courseId = getCourseId();
 
    db->prepare("INSERT INTO races(DRIVER1,DRIVER2,DATE,LAPS,LAP_LENGTH,COURSE) "\
@@ -2347,7 +2325,7 @@ void LinslotWindow::on_toolButtonTest_clicked()
    model->setHeaderData(model->fieldIndex("PROFILE_ID"), Qt::Horizontal, "Id");
    model->setHeaderData(model->fieldIndex("NAME"), Qt::Horizontal, "Name");
    model->setHeaderData(model->fieldIndex("COURSE"), Qt::Horizontal, "Strecke");
-   model->setHeaderData(model->fieldIndex("LAP_LENGTH"), Qt::Horizontal, "Länge");
+   model->setHeaderData(model->fieldIndex("LAP_LENGTH"), Qt::Horizontal, "LÃ¤nge");
 
    model->select();
    tableView->setModel(model);
@@ -2377,7 +2355,7 @@ void LinslotWindow::on_toolButtonTest_clicked()
    scrollRight->setAutoRepeat(true);
    scrollRight->setText(">");
    edit->setText("bearbeiten");
-   remove->setText("löschen");
+   remove->setText("lÃ¶schen");
    checkVolt->setText("Spannung");
    checkAmpere->setText("Strom");
    checkPower->setText("Leistung");

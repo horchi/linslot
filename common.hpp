@@ -217,6 +217,7 @@ class SlotService
          sfRaceAborted,
          sfCountdownPhase,
          sfLapSignal,
+         sfLapSignalFast,
          sfFuelingStart,
          sfFuelingInterrupted,
          sfFuelingFinished,

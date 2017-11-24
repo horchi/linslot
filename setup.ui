@@ -588,7 +588,7 @@
        <item row="1" column="0" >
         <widget class="QGroupBox" name="groupBox_4" >
          <property name="title" >
-          <string>Fruehstart</string>
+          <string>Frühstart</string>
          </property>
          <widget class="QRadioButton" name="radioButtonJumpTheGunAbort" >
           <property name="geometry" >

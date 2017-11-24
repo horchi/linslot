@@ -481,16 +481,17 @@ const char* SlotService::analogInFunctionName(int fct)
 
 SlotService::SoundSignal SlotService::sounds[] =
 {
-   { "Race start",          "explos.wav"   },
-   { "Race finished",       "left.wav"     },
-   { "Race aborted",        "applause.wav" },
-   { "Countdown phase",     "pluck.wav"    },
-   { "Lap signal",          "notify.wav"   },
-   { "Fueling start",       "pass.wav"     },
-   { "Fueling interrupted", "coin.wav"     },
-   { "Fueling finished",    "coin.wav"     },
-   { "'Jump the gun'",      "send.wav"     },
-   { "Fuel empty",          "skid.wav"     }
+   { "Race start",           "explos.wav"   },
+   { "Race finished",        "left.wav"     },
+   { "Race aborted",         "applause.wav" },
+   { "Countdown phase",      "pluck.wav"    },
+   { "Lap signal",           "notify.wav"   },
+   { "Lap signal (fastest)", "fall.wav"     },
+   { "Fueling start",        "pass.wav"     },
+   { "Fueling interrupted",  "coin.wav"     },
+   { "Fueling finished",     "coin.wav"     },
+   { "'Jump the gun'",       "send.wav"     },
+   { "Fuel empty",           "skid.wav"     }
 };
 
 //***************************************************************************

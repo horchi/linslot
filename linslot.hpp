@@ -120,8 +120,8 @@ class LinslotWindow : public QMainWindow, private Ui::LinslotWindow, public Slot
          timeval lastSignal;
          int lap;
          double fastLapTime;
-         char driver[sizeName+TB];
-         char car[sizeName+TB];
+         // char driver[sizeName+TB];
+         // char car[sizeName+TB];
          int penalty;
          double fuelLevel;            // fuel level
          int fueling;
@@ -162,10 +162,10 @@ class LinslotWindow : public QMainWindow, private Ui::LinslotWindow, public Slot
       void atStart();
       void atStartTraining();
       void atFinish(int slot);
-      void atAbort(const char* info);
+      void atAbort(QString* info);
       void atJumpStart(int slot);
       void atNoFuel(int slot);
-      void atStop(const char* info);
+      void atStop(QString* info);
 
       int getImagesFor(int led, const char* &ledOn, const char* &ledOff);
       void setOutputs(int mask);

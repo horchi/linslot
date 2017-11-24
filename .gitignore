@@ -4,3 +4,5 @@ moc_*
 linslot
 Makefile
 ui_*
+.qmake.stash
+sync.sh
