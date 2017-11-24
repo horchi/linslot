@@ -4,3 +4,4 @@ moc_*
 linslot
 Makefile
 ui_*
+sync.sh
