@@ -2,6 +2,8 @@
 # if [ "$1" != "" ] ; then
 #fi
 
+export QT_SELECT=qt5
+
 qmake
 make -s
 
