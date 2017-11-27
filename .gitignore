@@ -2,7 +2,7 @@ moc_*
 *.o
 *.a
 linslot
-Makefile
+Makefile.qt
 ui_*
 .qmake.stash
 sync.sh
