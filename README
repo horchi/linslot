@@ -33,12 +33,13 @@ Quellcode holen (muss nur einmal gemacht werden):
 Ansonsten - wenn es eine neue Version gibt) aktualisierern:
 
 #> cd ~/linslot
-#> git
+#> git pull
 
 build / install
 
 #> cd ~/linslot
-#> ./build.sh
+#> make dclean all
+#> make install
 
 
 Arduino Build/Upload
@@ -72,10 +73,8 @@ oder ohne Anschluss des Ardunio im Test-Modus:
 
 #> linslot -t
 
-
 ###############
     TODOS
 ###############
 
-- Installationsskript
-- Programm auf 4-Spuren erweitern
+- Programm auf 4-Spuren erweitern?
