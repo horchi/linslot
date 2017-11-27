@@ -6,18 +6,34 @@
 # GNU GENERAL PUBLIC LICENSE. See the file COPYING for details.
 #***************************************************************************
 
-# The Makefile name has tu be identical to linslot.pro !
+RES_DEST   = /usr/local/share/linslot
+BIN_DEST   = /usr/local/bin
+TARGET     = linslot
+QT_VERSION = qt5
+
+# The Makefile name has to be identical to linslot.pro !
 
 QTMAKEFILE = Makefile.qt
 
 all:
-	qmake
+	$(shell QT_SELECT=$(QT_VERSION) qmake)
 	$(MAKE) --makefile=$(QTMAKEFILE)
 
 clean:
 	@-rm -f *.o core* *~
 	@-rm -rf linslot comtest release/ debug/
 
+dclean: distclean
+
 distclean: clean
 	@-rm -f $(QTMAKEFILE)
 	@-rm -f moc_*.cpp ui_*.h
+
+install:
+	if ! test -d $(RES_DEST); then \
+		mkdir -p "$(RES_DEST)" \
+	   chmod a+rx $(RES_DEST); \
+	fi
+	install --mode=644 -D pixmap/* $(RES_DEST)/
+	install --mode=644 -D sound/* $(RES_DEST)/
+	install --mode=755 -D $(TARGET) $(BIN_DEST)/
