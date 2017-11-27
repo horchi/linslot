@@ -30,10 +30,13 @@ distclean: clean
 	@-rm -f moc_*.cpp ui_*.h
 
 install:
-	if ! test -d $(RES_DEST); then \
-		mkdir -p "$(RES_DEST)" \
-	   chmod a+rx $(RES_DEST); \
+	if ! test -d $(RES_DEST)/pixmap; then \
+		mkdir -p $(RES_DEST)/pixmap; \
 	fi
-	install --mode=644 -D pixmap/* $(RES_DEST)/
-	install --mode=644 -D sound/* $(RES_DEST)/
+	if ! test -d $(RES_DEST)/sound; then \
+		mkdir -p $(RES_DEST)/sound; \
+	fi
+	chmod -R a+rX $(RES_DEST);
+	install --mode=644 -D pixmap/* $(RES_DEST)/pixmap/
+	install --mode=644 -D sound/* $(RES_DEST)/sound/
 	install --mode=755 -D $(TARGET) $(BIN_DEST)/
